@@ -77,7 +77,6 @@ describe('generateEndpointsList', function() {
 });
 
 
-// TODO: think about how should Ref work with SchemaWalker, paths, and other stuff.
 function Ref(ref) {
     this.ref = ref;
 }
@@ -85,11 +84,7 @@ Ref.prototype.get = function(object) {
     var chain = this.ref.split('.');
     for (var i=0; i<chain.length; i++) {
         var key = chain[i];
-        if (object instanceof PartialCollection) {
-            object = object.get(key);
-        } else {
-            object = object[key];
-        }
+        object = object[key];
         if (!object) {
             return undefined;
         }
@@ -101,21 +96,13 @@ Ref.prototype.set = function(object, value) {
     var key;
     for (var i=0; i<chain.length-1; i++) {
         key = chain[i];
-        if (object instanceof PartialCollection) {
-            object = object.get(key);
-        } else {
-            object = object[key];
-        }
+        object = object[key];
         if (!object) {
             throw this.ref + ' doesn\'t exist in ' + object;
         }
     }
     key = chain[chain.length - 1];
-    if (object instanceof PartialCollection) {
-        object.set(key, value);
-    } else {
-        object[key] = value;
-    }
+    object[key] = value;
 };
 
 describe('Ref', function () {
@@ -125,9 +112,6 @@ describe('Ref', function () {
         });
         it('should get deep references', function() {
             expect(new Ref('a.b.c').get({a:{b:{c:1}}})).toBe(1);
-        });
-        it('should work with PartialCollection', function() {
-            expect(new Ref('a').get(new PartialCollection({a: 1}))).toBe(1);
         });
         it('should not throw excepions for non-existent properties', function() {
             expect(new Ref('a.b.c').get({})).toBeUndefined();
@@ -146,12 +130,6 @@ describe('Ref', function () {
             ref.set(obj, 'bork');
             expect(ref.get(obj)).toEqual('bork');
         });
-        it('should work with PartialCollection', function() {
-            var obj = new PartialCollection({a: 1});
-            var ref = new Ref('a');
-            ref.set(obj, 'bork');
-            expect(ref.get(obj)).toEqual('bork');
-        });
         it('should fail if the parent property doesn\'t exist', function() {
             expect(function() {
                 var obj = {};
@@ -161,17 +139,6 @@ describe('Ref', function () {
         });
     });
 });
-
-// TODO: this is deprecated. Store should be just a plain object with collections objects like {'1':'foo', '5':'bar'}.
-function PartialCollection(data) {
-    this.data = data;
-}
-PartialCollection.prototype.get = function(id) {
-    return this.data[id];
-}
-PartialCollection.prototype.set = function(id, value) {
-    this.data[id] = value;
-}
 
 
 function createInterceptor(schemaDef, storeObj, newRefCallback) {
@@ -221,10 +188,9 @@ function createInterceptor(schemaDef, storeObj, newRefCallback) {
                 var itemPath = path + '.' + id;
 
                 var itemFromStore;
-                if (_.isArray(storeSubObj)) {
+                if (_.isObject(storeSubObj)) {
+                    // This can be an array or an ordinary key-value object. Both are fine.
                     itemFromStore = storeSubObj[id];
-                } else if (storeSubObj instanceof PartialCollection) {
-                    itemFromStore = storeSubObj.get(id);
                 } else {
                     // we don't allow types other than PartialCollection and array
                     console.assert(_.isUndefined(storeSubObj), storeSubObj);
@@ -342,7 +308,7 @@ describe('createInterceptor', function () {
     describe('with a pre-filled store', function () {
 
         var dataStoreExample = {
-            topics: new PartialCollection({
+            topics: {
                 '123': {
                     id: 123,
                     name: 'Example topic from Store',
@@ -351,8 +317,8 @@ describe('createInterceptor', function () {
                         new Ref('entries.15'),
                     ],
                 }
-            }),
-            entries: new PartialCollection({
+            },
+            entries: {
                 '12': {
                     text: 'uuuu uuuu uuuuu uuuu uuuuuuuu uuuuuu uuu uuu!',
                 },
@@ -360,12 +326,12 @@ describe('createInterceptor', function () {
                     text: 'Sample entry from store',
                     author: new Ref('users.42'),
                 },
-            }),
-            users: new PartialCollection({
+            },
+            users: {
                 '42': {
                     name: 'Frodo',
                 },
-            }),
+            },
         };
         var spy, interceptor;
 
@@ -408,7 +374,7 @@ describe('createInterceptor', function () {
 
         it('has inconsistent API that should be refactored', function () {
             var s1 = interceptor.topics.get(123).entries.get(1).text;
-            var s2 = dataStoreExample.topics.get(123).entries[1].get(dataStoreExample).text;
+            var s2 = dataStoreExample.topics[123].entries[1].get(dataStoreExample).text;
             expect(s1).toEqual(s2);
         });
     });
@@ -435,21 +401,13 @@ function addResponseToStore(ref, response, store) {
     var key;
     for (var i=0; i<chain.length-1; i++) {
         key = chain[i];
-        if (object instanceof PartialCollection) {
-            object = object.get(key);
-        } else {
-            object = object[key];
-        }
+        object = object[key];
         if (!object) {
             // TODO create
         }
     }
     key = chain[chain.length - 1];
-    if (object instanceof PartialCollection) {
-        object.set(key, value);
-    } else {
-        object[key] = value;
-    }
+    object[key] = value;
 }
 
 describe('addResponseToStore', function () {
@@ -460,11 +418,6 @@ describe('addResponseToStore', function () {
     xit('should add values correctly', function () {
         addResponseToStore('config', [{imagesUrl: 'http://example.com/images'}], store);
         expect(store.config.imagesUrl).toEqual('http://example.com/images');
-    });
-    xit('should create a PartialCollection when needed', function () {
-        addResponseToStore('topics', [{id: '123', name:'topic'}], store);
-        expect(store.topics.constructor).toEqual(PartialCollection);
-        expect(store.topics.get(123)).toEqual({id: '123', name:'topic'});
     });
 });
 
