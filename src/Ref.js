@@ -4,6 +4,7 @@
 function Ref(ref) {
     this.ref = ref;
 }
+
 Ref.prototype.get = function(object) {
     var chain = this.ref.split('.');
     for (var i=0; i<chain.length; i++) {
@@ -15,6 +16,8 @@ Ref.prototype.get = function(object) {
     }
     return object;
 };
+
+// TODO: refactor: implement set using get(path[:-1])
 Ref.prototype.set = function(object, value) {
     var chain = this.ref.split('.');
     var key;
