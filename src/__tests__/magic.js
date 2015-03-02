@@ -23,10 +23,7 @@ console.assert = function(condition, message) {
 // 6. Caching the models client-side (maybe also in localStorage)
 
 
-function generateEndpointsList(dataModelDef) {
-    var referencePlaceholder = 'REFERENCE';
-    var simpleSchema = dataModelDef(_.constant(referencePlaceholder));
-
+function generateEndpointsList(schemaObj) {
     var endpointsList = [];
 
     function traverse(obj, prefix) {
@@ -34,11 +31,11 @@ function generateEndpointsList(dataModelDef) {
         _.each(obj, function(value, key) {
             if (_.isArray(value)) {
                 endpointsList.push({path: prefix + key, type: 'collection'});
-                if (value[0] === referencePlaceholder) {
+                if (value[0] instanceof Ref) {
                     return; // No endpoints for individual references in collection
                 }
                 endpointsList.push({path: prefix + key + '/0', type: 'item'});
-            } if (value === referencePlaceholder) {
+            } if (value instanceof Ref) {
                 endpointsList.push({path: prefix + key, type: 'item (ref)'});
             }
             if (_.isObject(value)) {
@@ -47,24 +44,22 @@ function generateEndpointsList(dataModelDef) {
         });
     }
 
-    traverse(simpleSchema, '/');
+    traverse(schemaObj, '/');
 
     return endpointsList;
 }
 
 describe('generateEndpointsList', function() {
     it('should generate a list of endpoints', function() {
-        var dataModelDef = function (reference) {
-            return {
-                topics: [{
-                    name: 'Example topic',
-                    entries: [reference('entries')],
-                    openingEntry: reference('entries'),
-                }],
-                entries: [{
-                    text: 'Hello world',
-                }],
-            };
+        var dataModelDef = {
+            topics: [{
+                name: 'Example topic',
+                entries: [new Ref('entries')],
+                openingEntry: new Ref('entries'),
+            }],
+            entries: [{
+                text: 'Hello world',
+            }],
         };
         var endpointsList = generateEndpointsList(dataModelDef);
         expect(_.map(endpointsList, 'path')).toEqual([
@@ -79,17 +74,11 @@ describe('generateEndpointsList', function() {
 });
 
 
-function createInterceptor(schemaDef, storeObj, newRefCallback) {
-
-    console.assert(_.isFunction(schemaDef));
-    console.assert(_.isObject(storeObj));
-    console.assert(_.isFunction(newRefCallback));
-
-    var schemaObj = schemaDef(function reference(fieldName) {
-        return new Ref(fieldName);
-    });
+function createInterceptor(schemaObj, storeObj, newRefCallback) {
 
     console.assert(_.isObject(schemaObj));
+    console.assert(_.isObject(storeObj));
+    console.assert(_.isFunction(newRefCallback));
 
     // A constructor for our objects (this name will show up in the debugger)
     function Interceptor2() {}
@@ -203,33 +192,31 @@ function createInterceptor(schemaDef, storeObj, newRefCallback) {
 
 describe('createInterceptor', function () {
 
-    var dataModelDef = function (reference) {
-        return {
-            topics: [{
-                id: 123,
-                name: 'Example topic',
-                entries: [reference('entries')],
-                openingEntry: reference('entries'),
-                participants: [reference('users')],
-                creator: reference('users'),
-            }],
-            entries: [{
-                id: 1,
-                text: 'Sample entry from schema',
-                author: reference('users'),
-                topic: reference('topics'),
-            }],
-            users: [{
-                id: 1,
-                name: 'Winnie Pooh',
-                avatar: {
-                    url: 'http://example.com/pooh.jpg',
-                }
-            }],
-            config: {
-                imagesUrl: 'http://example.com/images/',
-            },
-        };
+    var dataModelDef = {
+        topics: [{
+            id: 123,
+            name: 'Example topic',
+            entries: [new Ref('entries')],
+            openingEntry: new Ref('entries'),
+            participants: [new Ref('users')],
+            creator: new Ref('users'),
+        }],
+        entries: [{
+            id: 1,
+            text: 'Sample entry from schema',
+            author: new Ref('users'),
+            topic: new Ref('topics'),
+        }],
+        users: [{
+            id: 1,
+            name: 'Winnie Pooh',
+            avatar: {
+                url: 'http://example.com/pooh.jpg',
+            }
+        }],
+        config: {
+            imagesUrl: 'http://example.com/images/',
+        },
     };
 
     it ('should work with empty store', function () {
@@ -424,29 +411,27 @@ function generateApiProxy(dataModelDef, dataSource) {
 
 describe('generateApiProxy', function() {
 
-    var dataModelDef = function (reference) {
-        return {
-            topics: [{
-                id: 123,
-                name: 'Example topic',
-                entries: [reference('entries')],
-                openingEntry: reference('entries'),
-                participants: [reference('users')],
-                creator: reference('users'),
-            }],
-            entries: [{
-                id: 123,
-                text: 'Hello world',
-                author: reference('users'),
-            }],
-            users: [{
-                id: 123,
-                name: 'Winnie Pooh',
-                avatar: {
-                    url: 'http://example.com/pooh.jpg',
-                }
-            }],
-        };
+    var dataModelDef = {
+        topics: [{
+            id: 123,
+            name: 'Example topic',
+            entries: [new Ref('entries')],
+            openingEntry: new Ref('entries'),
+            participants: [new Ref('users')],
+            creator: new Ref('users'),
+        }],
+        entries: [{
+            id: 123,
+            text: 'Hello world',
+            author: new Ref('users'),
+        }],
+        users: [{
+            id: 123,
+            name: 'Winnie Pooh',
+            avatar: {
+                url: 'http://example.com/pooh.jpg',
+            }
+        }],
     };
     var dataSource, API;
 
