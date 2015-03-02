@@ -7,13 +7,6 @@ var _ = require('lodash');
 var Ref = require('../Ref');
 
 
-// Mocking console.assert for tests
-console.assert = function(condition, message) {
-    message = message || 'Assertion failed';
-    expect(condition).toBeTruthy(message);
-};
-
-
 // Use cases for this schema:
 // 1. generate endpoints (server-side)
 // 2. generate mocks for the frontend (inspectCallback)

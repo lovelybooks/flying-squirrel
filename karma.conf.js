@@ -9,6 +9,7 @@ module.exports = function (config) {
         frameworks: ['jasmine', 'browserify'],
         files: [
             'node_modules/es5-shim/es5-shim.js', // Because JS in PhantomJS sucks.
+            'src/**/__mocks__/*.js',
             'src/**/__tests__/*.js',
         ],
         reportSlowerThan: 100,
