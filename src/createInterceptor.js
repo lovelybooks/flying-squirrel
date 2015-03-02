@@ -25,7 +25,7 @@ function createInterceptor(schemaObj, storeObj, newRefCallback) {
             console.assert(_.isUndefined(storeSubObj));
         }
         if (_.isUndefined(storeSubObj)) {
-            newRefCallback(path);
+            newRefCallback(path, schemaSubObj);
         }
         return createSubInterceptor(schemaSubObj, storeSubObj, path);
     }
@@ -35,9 +35,11 @@ function createInterceptor(schemaObj, storeObj, newRefCallback) {
         console.assert(schemaSubObj.length === 1);
         return {
             keys: function () {
-                if (_.isArray(storeSubObj)) {
-                    return _.keys(storeSubObj); // TODO: does it work as expected?
+                if (_.isObject(storeSubObj)) {
+                    return _.keys(storeSubObj); // TODO: does it work as expected for arrays too?
                 } else {
+                    // NOTE: we don't call the newRefCallback. It will be called when this item
+                    // will be accessed.
                     return ['*']; // hacky: the getter on this key should return item from schema
                 }
             },
@@ -64,7 +66,7 @@ function createInterceptor(schemaObj, storeObj, newRefCallback) {
                 if (_.isUndefined(itemFromStore)) {
                     // NOTE: itemFromStore might be undefined regardless which
                     // execution path was chosen above.
-                    newRefCallback(itemPath);
+                    newRefCallback(itemPath, itemFromSchema);
                 }
 
                 // TODO: createSubInterceptor only if they are objects
@@ -76,7 +78,7 @@ function createInterceptor(schemaObj, storeObj, newRefCallback) {
     function returnValueForGetter(valueFromSchema, valueFromStore, fieldPath) {
         if (_.isUndefined(valueFromStore)) {
             // If we don't have a valueFromStore, we'll need to get it.
-            newRefCallback(fieldPath);
+            newRefCallback(fieldPath, valueFromSchema);
         } else if (!_.isObject(valueFromStore)) {
             // For primitive we return the valueFromStore...
             return valueFromStore;

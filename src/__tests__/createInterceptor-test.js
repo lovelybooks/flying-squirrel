@@ -4,6 +4,7 @@
 var createInterceptor = require('../createInterceptor');
 var Ref = require('../Ref');
 
+
 describe('createInterceptor', function () {
 
     var dataModelDef = {
@@ -38,9 +39,9 @@ describe('createInterceptor', function () {
         var interceptor = createInterceptor(dataModelDef, {}, spy);
         expect(spy).not.toHaveBeenCalled();
         expect(interceptor.topics.get(199).name).toEqual('Example topic');
-        expect(spy).toHaveBeenCalledWith('topics');
-        expect(spy).toHaveBeenCalledWith('topics.199');
-        expect(spy).toHaveBeenCalledWith('topics.199.name');
+        expect(spy).toHaveBeenCalledWith('topics', jasmine.any(Object));
+        expect(spy).toHaveBeenCalledWith('topics.199', jasmine.any(Object));
+        expect(spy).toHaveBeenCalledWith('topics.199.name', jasmine.any(String));
         expect(spy.calls.count()).toBe(3);
     });
 
@@ -85,30 +86,30 @@ describe('createInterceptor', function () {
             expect(spy).not.toHaveBeenCalled();
         });
 
-        it('should detect data we don\'t have yet (for simple accessor)', function () {
+        it('should detect data we don\'t have yet (for primitives and objects)', function () {
             expect(interceptor.config.imagesUrl).toEqual('http://example.com/images/');
-            expect(spy).toHaveBeenCalledWith('config');
-            expect(spy).toHaveBeenCalledWith('config.imagesUrl');
+            expect(spy).toHaveBeenCalledWith('config', dataModelDef.config);
+            expect(spy).toHaveBeenCalledWith('config.imagesUrl', jasmine.any(String));
         });
 
-        it('should detect data we don\'t have yet (for collection item)', function () {
+        it('should detect data we don\'t have yet (for collection items)', function () {
             expect(interceptor.topics.get(199)).not.toBeNull();
-            expect(spy).toHaveBeenCalledWith('topics.199');
+            expect(spy).toHaveBeenCalledWith('topics.199', dataModelDef.topics[0]);
         });
 
-        it('should detect data we don\'t have yet (for deeply-nested object)', function () {
+        it('should detect data we don\'t have yet (for references)', function () {
             expect(interceptor.topics.get(123).openingEntry.text).toEqual("Sample entry from schema");
-            expect(spy).not.toHaveBeenCalledWith('topics');
-            expect(spy).not.toHaveBeenCalledWith('topics.123');
-            expect(spy).toHaveBeenCalledWith('topics.123.openingEntry');
-            expect(spy).toHaveBeenCalledWith('topics.123.openingEntry.text');
+            expect(spy).not.toHaveBeenCalledWith('topics', jasmine.any(Object));
+            expect(spy).not.toHaveBeenCalledWith('topics.123', jasmine.any(Object));
+            expect(spy).toHaveBeenCalledWith('topics.123.openingEntry', dataModelDef.entries[0]);
+            expect(spy).toHaveBeenCalledWith('topics.123.openingEntry.text', jasmine.any(String));
         });
 
         it('should work the same for both fetched and non-fetched data', function () {
             expect(interceptor.topics.get(123).entries.get(1).text).toEqual("Sample entry from store");
             expect(spy).not.toHaveBeenCalled();
             expect(interceptor.topics.get(199).entries.get(1).text).toEqual("Sample entry from schema");
-            expect(spy).toHaveBeenCalledWith('topics.199.entries.1.text');
+            expect(spy).toHaveBeenCalledWith('topics.199.entries.1.text', jasmine.any(String));
         });
 
         it('has inconsistent API that should be refactored', function () {
