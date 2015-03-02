@@ -45,6 +45,27 @@ describe('createInterceptor', function () {
         expect(spy.calls.count()).toBe(3);
     });
 
+    it('should provide the callback with relevant Ref in schema', function () {
+        /*jshint -W030 */
+        var spy = jasmine.createSpy();
+        var interceptor = createInterceptor(dataModelDef, {}, spy);
+        interceptor.entries.get(123).author.name;
+        expect(spy).toHaveBeenCalledWith('entries.123.author', dataModelDef.entries[0].author);
+        expect(spy).toHaveBeenCalledWith('entries.123.author', dataModelDef.users[0]);
+        expect(spy).toHaveBeenCalledWith('entries.123.author.name', jasmine.any(String));
+    });
+
+    it('should provide the callback with relevant collection def', function () {
+        /*jshint -W030 */
+        var spy = jasmine.createSpy();
+        var interceptor = createInterceptor(dataModelDef, {}, spy);
+        interceptor.topics.getAll()[0].name;
+        expect(spy).toHaveBeenCalledWith('topics', dataModelDef.topics);
+        expect(spy).toHaveBeenCalledWith('topics.*', dataModelDef.topics[0]);
+        expect(spy).toHaveBeenCalledWith('topics.*.name', jasmine.any(String));
+    });
+
+
     describe('with a pre-filled store', function () {
 
         var dataStoreExample = {
@@ -73,43 +94,45 @@ describe('createInterceptor', function () {
                 },
             },
         };
-        var spy, interceptor;
+        var pathSpy, interceptor;
 
         beforeEach(function() {
-            spy = jasmine.createSpy();
-            interceptor = createInterceptor(dataModelDef, dataStoreExample, spy);
-            expect(spy).not.toHaveBeenCalled();
+            pathSpy = jasmine.createSpy();
+            interceptor = createInterceptor(dataModelDef, dataStoreExample, function (ref) {
+                pathSpy(ref); // NOTE: we drop all the other arguments. They are tested in other tests.
+            });
+            expect(pathSpy).not.toHaveBeenCalled();
         });
 
         it('should handle stored data correctly', function () {
-            expect(interceptor.topics.get(123).name).toEqual("Example topic from Store");
-            expect(spy).not.toHaveBeenCalled();
+            expect(interceptor.topics.get(123).name).toEqual('Example topic from Store');
+            expect(pathSpy).not.toHaveBeenCalled();
         });
 
         it('should detect data we don\'t have yet (for primitives and objects)', function () {
             expect(interceptor.config.imagesUrl).toEqual('http://example.com/images/');
-            expect(spy).toHaveBeenCalledWith('config', dataModelDef.config);
-            expect(spy).toHaveBeenCalledWith('config.imagesUrl', jasmine.any(String));
+            expect(pathSpy).toHaveBeenCalledWith('config');
+            expect(pathSpy).toHaveBeenCalledWith('config.imagesUrl');
         });
 
         it('should detect data we don\'t have yet (for collection items)', function () {
             expect(interceptor.topics.get(199)).not.toBeNull();
-            expect(spy).toHaveBeenCalledWith('topics.199', dataModelDef.topics[0]);
+            expect(pathSpy).toHaveBeenCalledWith('topics.199');
         });
 
         it('should detect data we don\'t have yet (for references)', function () {
-            expect(interceptor.topics.get(123).openingEntry.text).toEqual("Sample entry from schema");
-            expect(spy).not.toHaveBeenCalledWith('topics', jasmine.any(Object));
-            expect(spy).not.toHaveBeenCalledWith('topics.123', jasmine.any(Object));
-            expect(spy).toHaveBeenCalledWith('topics.123.openingEntry', dataModelDef.entries[0]);
-            expect(spy).toHaveBeenCalledWith('topics.123.openingEntry.text', jasmine.any(String));
+            expect(interceptor.topics.get(123).openingEntry.text).toEqual('Sample entry from schema');
+            expect(pathSpy).not.toHaveBeenCalledWith('topics');
+            expect(pathSpy).not.toHaveBeenCalledWith('topics.123');
+            expect(pathSpy).toHaveBeenCalledWith('topics.123.openingEntry');
+            expect(pathSpy).toHaveBeenCalledWith('topics.123.openingEntry.text');
         });
 
         it('should work the same for both fetched and non-fetched data', function () {
-            expect(interceptor.topics.get(123).entries.get(1).text).toEqual("Sample entry from store");
-            expect(spy).not.toHaveBeenCalled();
-            expect(interceptor.topics.get(199).entries.get(1).text).toEqual("Sample entry from schema");
-            expect(spy).toHaveBeenCalledWith('topics.199.entries.1.text', jasmine.any(String));
+            expect(interceptor.topics.get(123).entries.get(1).text).toEqual('Sample entry from store');
+            expect(pathSpy).not.toHaveBeenCalled();
+            expect(interceptor.topics.get(199).entries.get(1).text).toEqual('Sample entry from schema');
+            expect(pathSpy).toHaveBeenCalledWith('topics.199.entries.1.text');
         });
 
         it('has inconsistent API that should be refactored', function () {
