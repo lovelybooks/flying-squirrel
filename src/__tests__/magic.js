@@ -4,6 +4,8 @@
 require('es6-promise').polyfill();
 var _ = require('lodash');
 
+var Ref = require('../Ref');
+
 
 // Mocking console.assert for tests
 console.assert = function(condition, message) {
@@ -73,70 +75,6 @@ describe('generateEndpointsList', function() {
             '/entries',
             '/entries/0',
         ]);
-    });
-});
-
-
-function Ref(ref) {
-    this.ref = ref;
-}
-Ref.prototype.get = function(object) {
-    var chain = this.ref.split('.');
-    for (var i=0; i<chain.length; i++) {
-        var key = chain[i];
-        object = object[key];
-        if (!object) {
-            return undefined;
-        }
-    }
-    return object;
-};
-Ref.prototype.set = function(object, value) {
-    var chain = this.ref.split('.');
-    var key;
-    for (var i=0; i<chain.length-1; i++) {
-        key = chain[i];
-        object = object[key];
-        if (!object) {
-            throw this.ref + ' doesn\'t exist in ' + object;
-        }
-    }
-    key = chain[chain.length - 1];
-    object[key] = value;
-};
-
-describe('Ref', function () {
-    describe('get(obj)', function () {
-        it('should get shallow references', function() {
-            expect(new Ref('a').get({a:1})).toBe(1);
-        });
-        it('should get deep references', function() {
-            expect(new Ref('a.b.c').get({a:{b:{c:1}}})).toBe(1);
-        });
-        it('should not throw excepions for non-existent properties', function() {
-            expect(new Ref('a.b.c').get({})).toBeUndefined();
-        });
-    });
-    describe('set(obj, value)', function () {
-        it('should set shallow references', function() {
-            var obj = {a:1};
-            var ref = new Ref('a');
-            ref.set(obj, 'bork');
-            expect(ref.get(obj)).toEqual('bork');
-        });
-        it('should set deep references', function() {
-            var obj = {a:{b:{c:1}}};
-            var ref = new Ref('a.b.c');
-            ref.set(obj, 'bork');
-            expect(ref.get(obj)).toEqual('bork');
-        });
-        it('should fail if the parent property doesn\'t exist', function() {
-            expect(function() {
-                var obj = {};
-                var ref = new Ref('a.b.c');
-                ref.set(obj, 'bork');
-            }).toThrow();
-        });
     });
 });
 
