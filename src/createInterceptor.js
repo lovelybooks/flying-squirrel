@@ -71,8 +71,7 @@ function createInterceptor(schemaObj, storeObj, newRefCallback) {
             path = ''; // Special case for the root path.
         }
         var subInterceptor = new Interceptor();
-        var fieldNames = _.union(_.keys(schemaSubObj), _.keys(storeSubObj));
-        _.each(fieldNames, function (fieldName) {
+        _.each(_.keys(schemaSubObj), function (fieldName) {
 
             // For each field in subInterceptor, we define a getter that calls the newRefCallback
             // whenever we need to use data from schema (i.e. we don't have the data in the store).
