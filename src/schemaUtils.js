@@ -4,6 +4,7 @@ var _ = require('lodash');
 var Ref = require('./Ref');
 
 var schemaUtils = {
+
     generateEndpointsList: function generateEndpointsList(schema) {
         var endpointsList = [];
 

@@ -6,20 +6,6 @@ var _ = require('lodash');
 
 var Ref = require('./Ref');
 
-function determineType(schemaObj) {
-    if (_.isArray(schemaObj)) {
-        return 'collection';
-    } else if (schemaObj instanceof Ref) {
-        return 'reference';
-    } else if (_.isObject(schemaObj)) {
-        console.assert(_.isPlainObject(schemaObj));
-        return 'object';
-    } else {
-        console.assert(!_.isUndefined(schemaObj));
-        return 'primitive';
-    }
-}
-
 // A constructor for our objects (this name will show up in the debugger)
 function Interceptor() {}
 
@@ -89,12 +75,12 @@ function createInterceptor(schemaObj, storeObj, newRefCallback) {
     }
 
     function returnValueForGetter(valueFromSchema, valueFromStore, path) {
-        // console.log(path, determineType(valueFromSchema));
         if (_.isUndefined(valueFromStore)) {
             // If we don't have a valueFromStore, we'll need to get it.
             newRefCallback(path, valueFromSchema);
         }
 
+        // TODO: refactor this to use schemaUtils.determineType()
         if (valueFromSchema instanceof Ref) {
             return createSubInterceptorForReference(valueFromSchema, valueFromStore, path);
         } else if (_.isArray(valueFromSchema)) {
