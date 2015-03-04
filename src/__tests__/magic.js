@@ -7,6 +7,7 @@ var _ = require('lodash');
 var Ref = require('../Ref');
 var createInterceptor = require('../createInterceptor');
 
+var utils = require('../schemaUtils');
 
 // Use cases for this schema:
 // 1. generate endpoints (server-side)
@@ -17,185 +18,12 @@ var createInterceptor = require('../createInterceptor');
 // 6. Caching the models client-side (maybe also in localStorage)
 
 
-function generateEndpointsList(schema) {
-    var endpointsList = [];
-
-    function traverse(subSchema, prefix) {
-        prefix = prefix || '';
-        _.each(subSchema, function(value, key) {
-            if (_.isArray(value)) {
-                endpointsList.push({path: prefix + key, type: 'collection'});
-                if (value[0] instanceof Ref) {
-                    return; // No endpoints for individual references in collection
-                }
-                endpointsList.push({path: prefix + key + '/0', type: 'item'});
-            } if (value instanceof Ref) {
-                endpointsList.push({path: prefix + key, type: 'item (ref)'});
-            }
-            if (_.isObject(value)) {
-                traverse(value, prefix + key + '/');
-            }
-        });
-    }
-
-    traverse(schema, '/');
-
-    return endpointsList;
-}
-
-describe('generateEndpointsList', function() {
-    it('should generate a list of endpoints', function() {
-        var schema = {
-            topics: [{
-                name: 'Example topic',
-                entries: [new Ref('entries')],
-                openingEntry: new Ref('entries'),
-            }],
-            entries: [{
-                text: 'Hello world',
-            }],
-        };
-        var endpointsList = generateEndpointsList(schema);
-        expect(_.map(endpointsList, 'path')).toEqual([
-            '/topics',
-            '/topics/0',
-            '/topics/0/entries',
-            '/topics/0/openingEntry',
-            '/entries',
-            '/entries/0',
-        ]);
-    });
-});
-
-
-function convertRefToEndpoint(ref) {
-    return '/' + ref.replace(/\./g, '/');
-}
-
-describe('convertRefToEndpoint', function() {
-    it('should map simple refs to endpoints', function() {
-        expect(convertRefToEndpoint('config')).toEqual('/config');
-        expect(convertRefToEndpoint('topics')).toEqual('/topics');
-        expect(convertRefToEndpoint('topics.123')).toEqual('/topics/123');
-        expect(convertRefToEndpoint('topics.123.openingEntry')).toEqual('/topics/123/openingEntry');
-    });
-});
-
-function determineType(schemaObj) {
-    if (_.isArray(schemaObj)) {
-        return 'collection';
-    } else if (schemaObj instanceof Ref) {
-        return 'reference';
-    } else if (_.isObject(schemaObj)) {
-        console.assert(_.isPlainObject(schemaObj));
-        return 'object';
-    } else {
-        console.assert(!_.isUndefined(schemaObj));
-        return 'primitive';
-    }
-}
-
-function descendInSchema(schema, subSchema, key) {
-    var type = determineType(subSchema);
-    if (type === 'collection') {
-        return subSchema[0]; // NOTE: we ignore the key.
-    } else if (type === 'reference') {
-        return descendInSchema(schema, subSchema.get(schema)[0], key);
-    } else if (type === 'object') {
-        return subSchema[key];
-    } else {
-        throw 'descendInSchema: Cannot descend to "' + key + '" key in primitive value';
-    }
-}
-
-function getTypeDeep(schema, ref) {
-    var path = ref.split('.');
-    var subSchema = schema;
-    _.each(path, function(key) {
-        subSchema = descendInSchema(schema, subSchema, key);
-        if (subSchema == null) {
-            throw 'getTypeDeep: Invalid ref: ' + ref;
-        }
-    });
-    return determineType(subSchema);
-}
-
-describe('getTypeDeep', function () {
-    var schema = {
-        topics: [{
-            name: 'Example topic',
-            entries: [new Ref('entries')],
-        }],
-        entries: [{
-            text: 'Hello world',
-        }],
-    };
-    it('returns types for refs in schema', function () {
-        expect(getTypeDeep(schema, 'topics')).toEqual('collection');
-        expect(getTypeDeep(schema, 'topics.123')).toEqual('object');
-        expect(getTypeDeep(schema, 'topics.123.entries')).toEqual('collection');
-        expect(getTypeDeep(schema, 'topics.123.entries.2')).toEqual('reference');
-        expect(getTypeDeep(schema, 'topics.123.entries.2.text')).toEqual('primitive');
-    });
-    it('throws error for invalid keys', function () {
-        expect(function () {
-            getTypeDeep(schema, 'bork');
-        }).toThrow();
-        expect(function () {
-            getTypeDeep(schema, 'topics.bork.bork');
-        }).toThrow();
-    });
-});
-
-function filterRefs(schema, refs) {
-    console.assert(_.isArray(refs), 'filterRefs: ref array expected');
-    var refsMap = {};
-    _.each(refs, function (ref) {
-        refsMap[ref] = true;
-    });
-    function refUp(ref) {
-        return _.dropRight(ref.split('.')).join('.');
-    }
-    _.each(_.keys(refsMap), function (ref) {
-        if (getTypeDeep(schema, ref) === 'primitive') {
-            delete refsMap[ref];
-        } else {
-            var up = refUp(ref);
-            if (up in refsMap) {
-                delete refsMap[up];
-            }
-        }
-    });
-    return _.keys(refsMap);
-}
-
-describe('filterRefs', function () {
-    var schema = {
-        topics: [{
-            name: 'Example topic',
-            entries: [new Ref('entries')],
-        }],
-        entries: [{
-            text: 'Hello world',
-        }],
-    };
-    it('filters out duplicate refs', function () {
-        expect(filterRefs(schema, ['topics.123', 'topics.123'])).toEqual(['topics.123']);
-    });
-    it('collapses nested refs', function () {
-        expect(filterRefs(schema, ['topics', 'topics.123'])).toEqual(['topics.123']);
-    });
-    it('strips primitive refs', function () {
-        expect(filterRefs(schema, ['topics.123', 'topics.123.name'])).toEqual(['topics.123']);
-    });
-});
-
 // This Backend collects references, sends requests to endpoints, and handles their responses.
 function createHttpBackend(schemaObj, httpGet) {
     console.assert(_.isFunction(httpGet));
     var backend = {
         get: function (refs) {
-            var filteredRefs = filterRefs(schemaObj, refs);
+            var filteredRefs = utils.filterRefs(schemaObj, refs);
             return httpGet('/?refs=' + filteredRefs.join(',')).then(function (result) {
                 _.merge(backend.store, result);
                 return backend.store;
@@ -278,7 +106,7 @@ function generateApiProxy(schema, dataSource) {
             // console.log('iterate!');
             var newRefsPromises = [];
             var mock = createInterceptor(schema, store, function (ref, subSchema) {
-                var type = determineType(subSchema);
+                var type = utils.determineType(subSchema);
                 if (_.endsWith(ref, '.*')) {
                     var oneUp = ref.substring(0, ref.length - 2);
                     newRefsPromises.push(dataSource.get(oneUp));
