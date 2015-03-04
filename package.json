@@ -1,6 +1,7 @@
 {
-  "name": "lovelybooks-gui",
-  "version": "0.0.0",
+  "name": "flying-squirrel",
+  "version": "0.0.1",
+  "description": "A simple but powerful library for accessing relational data over HTTP.",
   "dependencies": {
     "axios": "^0.5.0",
     "es6-promise": "^2.0.1"
