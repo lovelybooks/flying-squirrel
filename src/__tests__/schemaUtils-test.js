@@ -7,8 +7,8 @@ var schemaUtils = require('../schemaUtils');
 
 describe('schemaUtils', function () {
 
-    describe('generateEndpointsList', function() {
-        it('generates a list of endpoints for schema', function() {
+    describe('generateResourcesList', function() {
+        it('generates a list of resources for schema', function() {
             var schema = {
                 topics: [{
                     name: 'Example topic',
@@ -19,15 +19,48 @@ describe('schemaUtils', function () {
                     text: 'Hello world',
                 }],
             };
-            var endpointsList = schemaUtils.generateEndpointsList(schema);
-            expect(_.map(endpointsList, 'path')).toEqual([
-                '/topics',
-                '/topics/0',
-                '/topics/0/entries',
-                '/topics/0/openingEntry',
-                '/entries',
-                '/entries/0',
-            ]);
+            var observedResourcesList = schemaUtils.generateResourcesList(schema);
+            var expectedResourcesList = [
+                {ref: 'topics',                 type: 'collection', inCollections: []},
+                {ref: 'topics.{}',              type: 'object',     inCollections: ['topics']},
+                {ref: 'topics.{}.entries',      type: 'collection', inCollections: ['topics']},
+                {ref: 'topics.{}.openingEntry', type: 'reference',  inCollections: ['topics']},
+                {ref: 'entries',                type: 'collection', inCollections: []},
+                {ref: 'entries.{}',             type: 'object',     inCollections: ['entries']},
+            ];
+            // Checking results one-by-one (for more friendly error messages).
+            _.each(expectedResourcesList, function (expectedResource) {
+                var found = _.find(observedResourcesList, {ref: expectedResource.ref});
+                expect(found).toEqual(expectedResource);
+            });
+            expect(observedResourcesList.length).toEqual(expectedResourcesList.length);
+        });
+    });
+
+    describe('checkResourceHandlers', function() {
+        var checkResourceHandlers = schemaUtils.checkResourceHandlers;
+        var schema = {
+            entries: [{
+                text: 'Hello world',
+            }],
+        };
+        var myHandlers;
+        beforeEach(function () {
+            myHandlers = {
+                'entries': function () {},
+                'entries.{}': function () {},
+            };
+        });
+        it('returns an empty list when all is ok', function() {
+            expect(checkResourceHandlers(schema, myHandlers).length).toEqual(0);
+        });
+        it('detects missing resources', function() {
+            delete myHandlers.entries;
+            expect(checkResourceHandlers(schema, myHandlers).length).toEqual(1);
+        });
+        it('detects unexpected resources', function() {
+            myHandlers.unexpected = function () {};
+            expect(checkResourceHandlers(schema, myHandlers).length).toEqual(1);
         });
     });
 

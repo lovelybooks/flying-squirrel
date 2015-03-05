@@ -5,30 +5,90 @@ var Ref = require('./Ref');
 
 var schemaUtils = {
 
-    generateEndpointsList: function generateEndpointsList(schema) {
-        var endpointsList = [];
+    generateResourcesList: function generateResourcesList(schema) {
+        var resourcesList = [];
 
-        function traverse(subSchema, prefix) {
-            prefix = prefix || '';
-            _.each(subSchema, function(value, key) {
-                if (_.isArray(value)) {
-                    endpointsList.push({path: prefix + key, type: 'collection'});
-                    if (value[0] instanceof Ref) {
-                        return; // No endpoints for individual references in collection
-                    }
-                    endpointsList.push({path: prefix + key + '/0', type: 'item'});
-                } if (value instanceof Ref) {
-                    endpointsList.push({path: prefix + key, type: 'item (ref)'});
-                }
-                if (_.isObject(value)) {
-                    traverse(value, prefix + key + '/');
-                }
-            });
+        function copyAndAppend(array, element) {
+            var newArray = _.clone(array);
+            newArray.push(element);
+            return newArray;
         }
 
-        traverse(schema, '/');
+        function traverse(subSchema, path, inCollections) {
+            switch (schemaUtils.determineType(subSchema)) {
+                case 'collection':
+                    resourcesList.push({
+                        ref: path.join('.'),
+                        type: 'collection',
+                        inCollections: inCollections,
+                    });
+                    if (!(subSchema[0] instanceof Ref)) {
+                        // We provide endpoints for objects (but not refs) inside the collection.
+                        traverse(
+                            subSchema[0],
+                            copyAndAppend(path, '{}'),
+                            copyAndAppend(inCollections, _.last(path))
+                        );
+                    }
+                    return;
+                case 'reference':
+                    resourcesList.push({
+                        ref: path.join('.'),
+                        type: 'reference',
+                        inCollections: inCollections,
+                    });
+                    return;
+                case 'object':
+                    if (path.length) { // No endpoint for the root object.
+                        resourcesList.push({
+                            ref: path.join('.'),
+                            type: 'object',
+                            inCollections: inCollections,
+                        });
+                    }
+                    _.each(subSchema, function(value, key) {
+                        traverse(value, copyAndAppend(path, key), inCollections);
+                    });
+                    return;
+            }
+        }
 
-        return endpointsList;
+        traverse(schema, [], []);
+
+        return resourcesList;
+    },
+
+    checkResourceHandlers: function checkResourceHandlers(schema, resourceHandlers) {
+        var problems = [];
+        var expectedResourcesList = schemaUtils.generateResourcesList(schema);
+
+        _.each(expectedResourcesList, function (expectedResource) {
+            if (!_.has(resourceHandlers, expectedResource.ref)) {
+                var message = 'Missing handler for ' + expectedResource.ref + '. ';
+                var expectedArgs = _.map(expectedResource.inCollections, function (collectionName) {
+                    return collectionName + 'Ids (a list of integers)';
+                });
+                if (expectedResource.type === 'collection') {
+                    expectedArgs.push('criteria (object)');
+                }
+                message += 'It should accept arguments: ' + expectedArgs.join(', ') + ' ';
+                var returnType = {
+                    'collection': 'list',
+                    'object': 'object',
+                    'reference': 'integer',
+                }[expectedResource.type];
+                _.each(expectedResource.inCollections, function () {
+                    returnType = 'list of ' + returnType.replace(/(?= )|$/, 's');
+                });
+                message += 'and return a Promise of ' + returnType;
+                problems.push(message);
+            }
+        });
+        var unknownHandlers = _.difference(_.functions(resourceHandlers), _.map(expectedResourcesList, 'ref'));
+        _.each(unknownHandlers, function (unknownHandler) {
+            problems.push('Unexpected handler for: ' + unknownHandler);
+        });
+        return problems;
     },
 
     determineType: function determineType(schemaObj) {
@@ -46,15 +106,15 @@ var schemaUtils = {
     },
 
     descendInSchema: function descendInSchema(schema, subSchema, key) {
-        var type = schemaUtils.determineType(subSchema);
-        if (type === 'collection') {
-            return subSchema[0]; // NOTE: we ignore the key.
-        } else if (type === 'reference') {
-            return schemaUtils.descendInSchema(schema, subSchema.get(schema)[0], key);
-        } else if (type === 'object') {
-            return subSchema[key];
-        } else {
-            throw 'descendInSchema: Cannot descend to "' + key + '" key in primitive value';
+        switch (schemaUtils.determineType(subSchema)) {
+            case 'collection':
+                return subSchema[0]; // NOTE: we ignore the key.
+            case 'reference':
+                return schemaUtils.descendInSchema(schema, subSchema.get(schema)[0], key);
+            case 'object':
+                return subSchema[key];
+            default:
+                throw 'descendInSchema: Cannot descend to "' + key + '" key in primitive value';
         }
     },
 
