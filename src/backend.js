@@ -59,23 +59,6 @@ var backendUtils = {
             subStore[key] = xs[0];
         });
     },
-
-    createDbBackend: function createDbBackend(schema, getRef) {
-        console.assert(_.isFunction(getRef));
-        var prefix = '/?refs=';
-        var store = {};
-        return {
-            get: function(path) {
-                console.assert(_.startsWith(path, prefix), 'Invalid path: ' + path);
-                var refs = path.substring(prefix.length).split(',');
-                return Promise.all(_.map(refs, function (ref) {
-                    return getRef(schema, ref, store);
-                })).then(function () {
-                    return store;
-                });
-            },
-        };
-    },
 };
 
 module.exports = backendUtils;

@@ -7,33 +7,83 @@ var schemaUtils = require('../schemaUtils');
 
 describe('schemaUtils', function () {
 
-    describe('generateResourcesList', function() {
+    describe('getResourcesInfo', function() {
+        var schema = {
+            topics: [{
+                name: 'Example topic',
+                entries: [new Ref('entries')],
+                openingEntry: new Ref('entries'),
+            }],
+            entries: [{
+                text: 'Hello world',
+            }],
+        };
         it('generates a list of resources for schema', function() {
-            var schema = {
-                topics: [{
-                    name: 'Example topic',
-                    entries: [new Ref('entries')],
-                    openingEntry: new Ref('entries'),
-                }],
-                entries: [{
-                    text: 'Hello world',
-                }],
-            };
-            var observedResourcesList = schemaUtils.generateResourcesList(schema);
-            var expectedResourcesList = [
-                {ref: 'topics',                 type: 'collection', inCollections: []},
-                {ref: 'topics.{}',              type: 'object',     inCollections: ['topics']},
-                {ref: 'topics.{}.entries',      type: 'collection', inCollections: ['topics']},
-                {ref: 'topics.{}.openingEntry', type: 'reference',  inCollections: ['topics']},
-                {ref: 'entries',                type: 'collection', inCollections: []},
-                {ref: 'entries.{}',             type: 'object',     inCollections: ['entries']},
-            ];
-            // Checking results one-by-one (for more friendly error messages).
-            _.each(expectedResourcesList, function (expectedResource) {
-                var found = _.find(observedResourcesList, {ref: expectedResource.ref});
-                expect(found).toEqual(expectedResource);
-            });
-            expect(observedResourcesList.length).toEqual(expectedResourcesList.length);
+            expect(_.sortBy(_.keys(schemaUtils.getResourcesInfo(schema)))).toEqual([
+                'entries',
+                'entries.{}',
+                'topics',
+                'topics.{}',
+                'topics.{}.entries',
+                'topics.{}.openingEntry',
+            ]);
+        });
+        it('gives types of endpoints and of objects in collections', function() {
+            var resourcesInfo = schemaUtils.getResourcesInfo(schema);
+            expect(resourcesInfo.topics).toEqual(jasmine.objectContaining({
+                type: 'collection',
+                inCollections: [],
+                collectionOf: 'object',
+            }));
+            expect(resourcesInfo['topics.{}']).toEqual(jasmine.objectContaining({
+                type: 'object',
+                inCollections: ['topics'],
+            }));
+            expect(resourcesInfo['topics.{}.openingEntry']).toEqual(jasmine.objectContaining({
+                type: 'reference',
+            }));
+            expect(resourcesInfo['topics.{}.entries']).toEqual(jasmine.objectContaining({
+                type: 'collection',
+                collectionOf: 'reference',
+            }));
+            expect(resourcesInfo['entries.{}']).toEqual(jasmine.objectContaining({
+                inCollections: ['entries'],
+            }));
+        });
+        it('gives some additional info for the resources', function() {
+            var resourcesInfo = schemaUtils.getResourcesInfo(schema);
+            expect(resourcesInfo.topics).toEqual(jasmine.objectContaining({
+                type: 'collection',
+                inCollections: [],
+                collectionOf: 'object',
+            }));
+            expect(resourcesInfo['topics.{}']).toEqual(jasmine.objectContaining({
+                type: 'object',
+                inCollections: ['topics'],
+            }));
+            expect(resourcesInfo['topics.{}.openingEntry']).toEqual(jasmine.objectContaining({
+                type: 'reference',
+                inCollections: ['topics'],
+                referenceTo: 'entries',
+            }));
+            expect(resourcesInfo['topics.{}.entries']).toEqual(jasmine.objectContaining({
+                type: 'collection',
+                collectionOf: 'reference',
+            }));
+            expect(resourcesInfo['entries.{}']).toEqual(jasmine.objectContaining({
+                inCollections: ['entries'],
+            }));
+        });
+    });
+
+    describe('formatNestedType', function() {
+        var formatNestedType = schemaUtils.formatNestedType;
+        it('formats nested type names nicely', function() {
+            expect(formatNestedType(['list'])).toEqual('list');
+            expect(formatNestedType(['list', 'integer'])).toEqual('list of integers');
+            expect(formatNestedType(['Promise', 'x'])).toEqual('Promise of x');
+            expect(formatNestedType(['list', 'list', 'apple'])).toEqual('list of lists of apples');
+            expect(formatNestedType(['collection', 'list'])).toEqual('collection of lists');
         });
     });
 

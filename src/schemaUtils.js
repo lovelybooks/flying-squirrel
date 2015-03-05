@@ -19,8 +19,8 @@ function getParamNames(func) {
 
 var schemaUtils = {
 
-    generateResourcesList: function generateResourcesList(schema) {
-        var resourcesList = [];
+    getResourcesInfo: function getResourcesInfo(schema) {
+        var resourcesInfo = {};
 
         function copyAndAppend(array, element) {
             var newArray = _.clone(array);
@@ -28,14 +28,35 @@ var schemaUtils = {
             return newArray;
         }
 
+        function addResource(subSchema, path, inCollections) {
+            console.assert(_.filter(path, _.matches('{}')).length === inCollections.length);
+            var type = schemaUtils.determineType(subSchema);
+            var newResourceInfo = {
+                type: type,
+                inCollections: inCollections,
+                args: _.map(inCollections, function (collectionName) {
+                    return collectionName + 'Ids (a list of integers)';
+                }),
+                returnType: _.map(inCollections, _.constant('list')).concat({
+                    'collection': 'list',
+                    'object': 'object',
+                    'reference': 'integer',
+                }[type]),
+            };
+
+            if (type === 'collection') {
+                newResourceInfo.collectionOf = schemaUtils.determineType(subSchema[0]);
+                newResourceInfo.args.push('criteria (object)');
+            } else if (type === 'reference') {
+                newResourceInfo.referenceTo = subSchema.ref;
+            }
+            resourcesInfo[path.join('.')] = newResourceInfo;
+        }
+
         function traverse(subSchema, path, inCollections) {
             switch (schemaUtils.determineType(subSchema)) {
                 case 'collection':
-                    resourcesList.push({
-                        ref: path.join('.'),
-                        type: 'collection',
-                        inCollections: inCollections,
-                    });
+                    addResource(subSchema, path, inCollections);
                     if (!(subSchema[0] instanceof Ref)) {
                         // We provide endpoints for objects (but not refs) inside the collection.
                         traverse(
@@ -46,19 +67,11 @@ var schemaUtils = {
                     }
                     return;
                 case 'reference':
-                    resourcesList.push({
-                        ref: path.join('.'),
-                        type: 'reference',
-                        inCollections: inCollections,
-                    });
+                    addResource(subSchema, path, inCollections);
                     return;
                 case 'object':
                     if (path.length) { // No endpoint for the root object.
-                        resourcesList.push({
-                            ref: path.join('.'),
-                            type: 'object',
-                            inCollections: inCollections,
-                        });
+                        addResource(subSchema, path, inCollections);
                     }
                     _.each(subSchema, function(value, key) {
                         traverse(value, copyAndAppend(path, key), inCollections);
@@ -69,44 +82,40 @@ var schemaUtils = {
 
         traverse(schema, [], []);
 
-        return resourcesList;
+        // console.log(JSON.stringify(resourcesInfo, null, 4));
+
+        return resourcesInfo;
+    },
+
+    formatNestedType: function formatNestedType (types) {
+        return _.reduceRight(types, function (accumulatedType, newOuterType) {
+            if (_.contains(['list', 'array', 'collection'], newOuterType)) {
+                accumulatedType = accumulatedType.replace(/(?= )|$/, 's'); // plural form
+            }
+            return newOuterType + ' of ' + accumulatedType;
+        });
     },
 
     checkResourceHandlers: function checkResourceHandlers(schema, resourceHandlers) {
         var problems = [];
-        var expectedResourcesList = schemaUtils.generateResourcesList(schema);
+        var resourcesInfo = schemaUtils.getResourcesInfo(schema);
 
-        _.each(expectedResourcesList, function (expectedResource) {
-
-            var expectedArgs = _.map(expectedResource.inCollections, function (collectionName) {
-                return collectionName + 'Ids (a list of integers)';
-            });
-            if (expectedResource.type === 'collection') {
-                expectedArgs.push('criteria (object)');
+        _.each(resourcesInfo, function (resource, ref) {
+            var missingOrInvalid;
+            if (!_.has(resourceHandlers, ref)) {
+                missingOrInvalid = 'Missing';
+            } else if (getParamNames(resourceHandlers[ref]).length !== resource.args.length) {
+                missingOrInvalid = 'Invalid';
             }
-
-            var message;
-            if (!_.has(resourceHandlers, expectedResource.ref)) {
-                message = 'Missing';
-            } else if (getParamNames(resourceHandlers[expectedResource.ref]).length !== expectedArgs.length) {
-                message = 'Invalid';
-            }
-            if (message) {
-                message += ' handler for ' + expectedResource.ref + '. ';
-                message += 'It should accept arguments: ' + expectedArgs.join(', ') + ' ';
-                var returnType = {
-                    'collection': 'list',
-                    'object': 'object',
-                    'reference': 'integer',
-                }[expectedResource.type];
-                _.each(expectedResource.inCollections, function () {
-                    returnType = 'list of ' + returnType.replace(/(?= )|$/, 's');
-                });
-                message += 'and return a Promise of ' + returnType;
-                problems.push(message);
+            if (missingOrInvalid) {
+                problems.push(
+                    missingOrInvalid + ' handler for ' + ref + '. ' +
+                    'It should accept arguments: ' + resource.args.join(', ') + ' and return a ' +
+                    schemaUtils.formatNestedType(['Promise'].concat(resource.returnType))
+                );
             }
         });
-        var unknownHandlers = _.difference(_.functions(resourceHandlers), _.map(expectedResourcesList, 'ref'));
+        var unknownHandlers = _.difference(_.functions(resourceHandlers), _.keys(resourcesInfo));
         _.each(unknownHandlers, function (unknownHandler) {
             problems.push('Unexpected handler for: ' + unknownHandler);
         });

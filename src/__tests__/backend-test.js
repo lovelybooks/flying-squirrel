@@ -146,36 +146,4 @@ describe('backend stuff', function () {
             // TODO
         });
     });
-
-    describe('createDbBackend', function () {
-        var createDbBackend = backendUtils.createDbBackend;
-        var schema = {
-            topics: [{
-                id: 123,
-                name: 'Example topic',
-                entries: [new Ref('entries')],
-                openingEntry: new Ref('entries'),
-                participants: [new Ref('users')],
-                creator: new Ref('users'),
-            }],
-            entries: [{
-                id: 123,
-                text: 'Hello world',
-                author: new Ref('users'),
-            }],
-            users: [{
-                id: 123,
-                name: 'Winnie Pooh',
-                avatar: {
-                    url: 'http://example.com/pooh.jpg',
-                }
-            }],
-        };
-        xit('calls the given getRef() callback with correct arguments', function () {
-            var spy = jasmine.createSpy().and.returnValue(new Promise(function(){}));
-            var backend = createDbBackend(schema, spy);
-            expect(backend.get('/?refs=entries.123.author')).toEqual(jasmine.any(Promise));
-            expect(spy).toHaveBeenCalledWith(schema, 'entries.{}.author', 123);
-        });
-    });
 });
