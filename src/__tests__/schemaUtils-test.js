@@ -47,8 +47,8 @@ describe('schemaUtils', function () {
         var myHandlers;
         beforeEach(function () {
             myHandlers = {
-                'entries': function () {},
-                'entries.{}': function () {},
+                'entries': function (criteria) {}, // jshint ignore:line
+                'entries.{}': function (entryIds) {}, // jshint ignore:line
             };
         });
         it('returns an empty list when all is ok', function() {
@@ -60,6 +60,10 @@ describe('schemaUtils', function () {
         });
         it('detects unexpected resources', function() {
             myHandlers.unexpected = function () {};
+            expect(checkResourceHandlers(schema, myHandlers).length).toEqual(1);
+        });
+        it('detects invalid resource handlers', function() {
+            myHandlers.entries = function (foo, bar, baz) {};
             expect(checkResourceHandlers(schema, myHandlers).length).toEqual(1);
         });
     });

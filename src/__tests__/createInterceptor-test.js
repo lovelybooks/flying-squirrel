@@ -46,20 +46,18 @@ describe('createInterceptor', function () {
     });
 
     it('should provide the callback with relevant Ref in schema', function () {
-        /*jshint -W030 */
         var spy = jasmine.createSpy();
         var interceptor = createInterceptor(dataModelDef, {}, spy);
-        interceptor.entries.get(123).author.name;
+        interceptor.entries.get(123).author.name; // jshint ignore:line
         expect(spy).toHaveBeenCalledWith('entries.123.author', dataModelDef.entries[0].author);
         expect(spy).toHaveBeenCalledWith('entries.123.author', dataModelDef.users[0]);
         expect(spy).toHaveBeenCalledWith('entries.123.author.name', jasmine.any(String));
     });
 
     it('should provide the callback with relevant collection def', function () {
-        /*jshint -W030 */
         var spy = jasmine.createSpy();
         var interceptor = createInterceptor(dataModelDef, {}, spy);
-        interceptor.topics.getAll()[0].name;
+        interceptor.topics.getAll()[0].name; // jshint ignore:line
         expect(spy).toHaveBeenCalledWith('topics', dataModelDef.topics);
         expect(spy).toHaveBeenCalledWith('topics.*', dataModelDef.topics[0]);
         expect(spy).toHaveBeenCalledWith('topics.*.name', jasmine.any(String));

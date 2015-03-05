@@ -3,6 +3,20 @@
 var _ = require('lodash');
 var Ref = require('./Ref');
 
+
+// Helper function. Source: http://stackoverflow.com/questions/1007981
+var STRIP_COMMENTS = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
+var ARGUMENT_NAMES = /([^\s,]+)/g;
+function getParamNames(func) {
+    var fnStr = func.toString().replace(STRIP_COMMENTS, '');
+    var result = fnStr.slice(fnStr.indexOf('(')+1, fnStr.indexOf(')')).match(ARGUMENT_NAMES);
+    if (result === null) {
+        result = [];
+    }
+    return result;
+}
+
+
 var schemaUtils = {
 
     generateResourcesList: function generateResourcesList(schema) {
@@ -63,14 +77,22 @@ var schemaUtils = {
         var expectedResourcesList = schemaUtils.generateResourcesList(schema);
 
         _.each(expectedResourcesList, function (expectedResource) {
+
+            var expectedArgs = _.map(expectedResource.inCollections, function (collectionName) {
+                return collectionName + 'Ids (a list of integers)';
+            });
+            if (expectedResource.type === 'collection') {
+                expectedArgs.push('criteria (object)');
+            }
+
+            var message;
             if (!_.has(resourceHandlers, expectedResource.ref)) {
-                var message = 'Missing handler for ' + expectedResource.ref + '. ';
-                var expectedArgs = _.map(expectedResource.inCollections, function (collectionName) {
-                    return collectionName + 'Ids (a list of integers)';
-                });
-                if (expectedResource.type === 'collection') {
-                    expectedArgs.push('criteria (object)');
-                }
+                message = 'Missing';
+            } else if (getParamNames(resourceHandlers[expectedResource.ref]).length !== expectedArgs.length) {
+                message = 'Invalid';
+            }
+            if (message) {
+                message += ' handler for ' + expectedResource.ref + '. ';
                 message += 'It should accept arguments: ' + expectedArgs.join(', ') + ' ';
                 var returnType = {
                     'collection': 'list',

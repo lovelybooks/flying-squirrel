@@ -7,16 +7,8 @@ var schemaUtils = require('./schemaUtils');
 
 var backendUtils = {
 
-    // // TODO: refactor/enhance/remove?
-    // getResource: function getResource(resource, args) {
-    //     console.assert(args.length === (resource.match(/\{\}/g) || []).length);
-    //     var promiseOrResult = dbResourceHandlers[resource].apply(null, args);
-    //     return Promise.resolve(promiseOrResult); // We always return a Promise.
-    // },
-
     // writes the data to store and returns a new ref (if we are not finished yet) or null
     getRef: function getRef(schema, ref, getResource, store) {
-        /*jshint -W083 */ // Supressing "Don't make functions within a loop" warning
         console.assert(_.isObject(store));
         console.assert(_.isFunction(getResource));
         console.assert(schemaUtils.getTypeDeep(schema, ref) !== 'primitive');
@@ -49,7 +41,7 @@ var backendUtils = {
                     var dereferencedPath = _.flatten([subSchema.ref, referencedId, _.slice(path, i+1)]);
                     // console.log('Resolving ref: ' + ref + ' → ' + dereferencedPath.join('.'));
                     return getRef(schema, dereferencedPath.join('.'), getResource, store);
-                });
+                }); // jshint ignore:line
             }
 
             // Updating subStore.
