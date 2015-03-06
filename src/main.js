@@ -24,7 +24,7 @@ Server.prototype.fetchResource = function fetchResource(resource, args) {
     console.assert(handlerInfo);
     console.assert(args.length === handlerInfo.inCollections.length);
     console.assert(args.length === (resource.match(/\{\}/g) || []).length);
-    console.log(resource, args);
+    console.log('Fetching from ' + resource, args);
     var promiseOrResult = this.resourceHandlers[resource].apply(null, args);
     console.assert(promiseOrResult);
     return Promise.resolve(promiseOrResult).then(function (result) {
@@ -46,7 +46,10 @@ Server.prototype.fetchResource = function fetchResource(resource, args) {
             _.each(handlerInfo.inCollections, function () {
                 problemMessage = 'list of ' + problemMessage.replace(/(?= )|$/, 's');
             });
-            console.error('FlyingSquirrel: Wrong result type from resource handler ' + resource + ': ' + problemMessage);
+            console.error(
+                'FlyingSquirrel: Wrong result type from resource handler ' + resource + ': ' +
+                problemMessage
+            );
         }
         return result;
     });
