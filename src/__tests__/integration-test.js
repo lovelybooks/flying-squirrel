@@ -42,8 +42,7 @@ describe('FlyingSquirrel integration test (for main.js)', function () {
                 // Promise of [{id:14, name:'topic name', type:'review'}, ...]
             },
             'topics.{}.openingEntry': function (topicIds) {
-                // reference
-                // Promise of [123, ...]
+                expect(topicIds).toEqual(['123']);
                 return [789];
             },
             'topics.{}.entries': function (topicIds) {
@@ -60,8 +59,7 @@ describe('FlyingSquirrel integration test (for main.js)', function () {
                 // Promise of [{id:123, text:'Hello world, this is my first post'}, ...]
             },
             'entries.{}.author': function (entryIds) {
-                // reference
-                // Promise of [1337, ...]
+                expect(entryIds).toEqual(['789']);
                 return [1337];
             },
             'users': function (criteria) {
@@ -76,7 +74,7 @@ describe('FlyingSquirrel integration test (for main.js)', function () {
         };
 
         // Disabling console output for this test.
-        spyOn(console, 'log');
+        // spyOn(console, 'log');
         spyOn(console, 'warn');
         // TODO test console output, too!
 

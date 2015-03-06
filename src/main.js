@@ -37,7 +37,7 @@ Server.prototype.fetchResource = function fetchResource(resource, args) {
             problemMessage = 'reference (integer) expected';
         }
         if (handlerInfo.type === 'object' && (!_.isObject(subResult) || _.isArray(subResult))) {
-            problemMessage = 'object (non-array) expected';
+            problemMessage = 'object expected';
         }
         if (handlerInfo.type === 'collection' && !_.isArray(subResult)) {
             problemMessage = 'list (array) expected';
