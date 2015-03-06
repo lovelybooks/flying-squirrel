@@ -74,12 +74,13 @@ describe('backend stuff', function () {
                 }
             }],
         };
-        var getResourceSpy, store, tick;
+        var tick = jasmine.clock().tick;
+        var getResourceSpy, store;
         beforeEach(function () {
             getResourceSpy = jasmine.createSpy('getResource').and.returnValue(Promise.resolve());
             jasmine.clock().install();
-            tick = jasmine.clock().tick;
             store = {};
+            spyOn(console, 'log'); // Disabling console output. TODO: make output configurable
         });
         afterEach(function () {
             tick(1);
@@ -111,39 +112,84 @@ describe('backend stuff', function () {
             expect(getResourceSpy).toHaveBeenCalledWith('entries.{}.author', [['1234']]);
             expect(getResourceSpy).toHaveBeenCalledWith('users.{}', [['777']]);
         });
-        it('works with deep references', function () {
+        describe('advanced tests', function () {
             var resolve;
-            getResourceSpy.and.callFake(function () {
-                return new Promise(function (_resolve) {
-                    resolve = _resolve;
+            beforeEach(function () {
+                getResourceSpy.and.callFake(function () {
+                    return new Promise(function (_resolve) {
+                        resolve = _resolve;
+                    });
                 });
             });
-            getRef(schema, 'topics.123.openingEntry.author', getResourceSpy, store);
-            tick(1);
-            expect(getResourceSpy).toHaveBeenCalledWith('topics.{}.openingEntry', [['123']]);
-            tick(1);
-            resolve([1234]);
-            tick(1);
-            expect(getResourceSpy).toHaveBeenCalledWith('entries.{}.author', [['1234']]);
-            tick(1);
-            resolve([777]);
-            tick(1);
-            expect(getResourceSpy).toHaveBeenCalledWith('users.{}', [['777']]);
-            tick(1);
-            resolve([{name: 'James Bond'}]);
-            tick(1);
-            expect(store.topics[123].openingEntry).toEqual(1234);
-            expect(store.entries[1234].author).toEqual(777);
-            expect(store.users[777]).toEqual({name: 'James Bond'});
-        });
-        it('works with collections', function () {
-            getResourceSpy.and.returnValue(Promise.resolve([[12, 13, 14, 15]]));
-            getRef(schema, 'topics.123.entries', getResourceSpy, store);
-            tick(1);
-            expect(getResourceSpy).toHaveBeenCalledWith('topics.{}.entries', [['123']]);
-            tick(1);
-            expect(store.topics[123].entries).toEqual([12, 13, 14, 15]);
-            // TODO
+            function expectResouceRequest(resource, args) {
+                expect(getResourceSpy).toHaveBeenCalledWith(resource, args);
+                tick(1);
+            }
+            function respondWith(response) {
+                resolve(response);
+                tick(1);
+            }
+            it('works with deep references', function () {
+                getRef(schema, 'topics.123.openingEntry.author', getResourceSpy, store);
+                tick(1);
+                expectResouceRequest('topics.{}.openingEntry', [['123']]);
+                respondWith([1234]);
+                expectResouceRequest('entries.{}.author', [['1234']]);
+                respondWith([777]);
+                expectResouceRequest('users.{}', [['777']]);
+                respondWith([{name: 'James Bond'}]);
+                expect(store.topics[123].openingEntry).toEqual(1234);
+                expect(store.entries[1234].author).toEqual(777);
+                expect(store.users[777]).toEqual({name: 'James Bond'});
+            });
+            it('works with \'*\' for collections of refs', function () {
+                getRef(schema, 'topics.123.entries.*', getResourceSpy, store);
+                tick(1);
+                expectResouceRequest('topics.{}.entries', [['123']]);
+                respondWith([12, 14, 16]);
+                expectResouceRequest('entries.{}', [['12', '14', '16']]);
+                respondWith([
+                    {id: 12, text: 'foo'},
+                    {id: 14, text: 'bar'},
+                    {id: 16, text: 'baz'},
+                ]);
+                expect(_.values(store.topics[123].entries)).toEqual([12, 14, 16]);
+                expect(_.sortBy(_.keys(store.entries))).toEqual(['12', '14', '16']);
+                expect(store.entries[16].text).toEqual('baz');
+            });
+            it('works with \'*\' for collections of objects', function () {
+                getRef(schema, 'entries.*', getResourceSpy, store);
+                expectResouceRequest('entries', []);
+                respondWith([12, 14, 16]);
+                expectResouceRequest('entries.{}', [['12', '14', '16']]);
+                respondWith([
+                    {id: 12, text: 'foo'},
+                    {id: 14, text: 'bar'},
+                    {id: 16, text: 'baz'},
+                ]);
+                expect(_.sortBy(_.keys(store.entries))).toEqual(['12', '14', '16']);
+                expect(store.entries[16].text).toEqual('baz');
+            });
+            it('works with \'*\' for stuff inside collections', function () {
+                getRef(schema, 'entries.*.author', getResourceSpy, store);
+                tick(1);
+                expectResouceRequest('entries', []);
+                respondWith([12, 14, 16]);
+                expectResouceRequest('entries.{}.author', [['12', '14', '16']]);
+                respondWith([102, 104, 106]);
+                expectResouceRequest('users.{}', [['102', '104', '106']]);
+                respondWith([
+                    {id: 102, name: 'Superman'},
+                    {id: 104, name: 'Spiderman'},
+                    {id: 106, name: 'Batman'},
+                ]);
+                expect(store.entries[12]).toEqual({author: 102});
+                expect(store.entries[14]).toEqual({author: 104});
+                expect(store.entries[16]).toEqual({author: 106});
+                expect(_.size(store.entries)).toEqual(3);
+                expect(_.sortBy(_.keys(store.users))).toEqual(['102', '104', '106']);
+                expect(store.users[106].name).toEqual('Batman');
+            });
         });
     });
 });

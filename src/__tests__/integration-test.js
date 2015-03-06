@@ -74,7 +74,7 @@ describe('FlyingSquirrel integration test (for main.js)', function () {
         };
 
         // Disabling console output for this test.
-        // spyOn(console, 'log');
+        spyOn(console, 'log');
         spyOn(console, 'warn');
         // TODO test console output, too!
 
