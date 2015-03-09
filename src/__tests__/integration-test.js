@@ -84,4 +84,43 @@ describe('FlyingSquirrel integration test (for main.js)', function () {
             done();
         });
     });
+
+    xit('works for Client', function (done) {
+
+
+        // Disabling console output for this test.
+        // spyOn(console, 'log');
+        // spyOn(console, 'warn');
+        // TODO test console output, too!
+        var mockedResponse ={
+            topics: {
+                '1070937897': {
+                    'entries': ['1070942045', '1088602332'],
+                }
+            },
+            entries: {
+                '1070942045': {author: 1070934875},
+                '1088602332': {author: 1082193591},
+            },
+            users: {
+                '1082193591': {id: 1082193591, name: 'emmah9'},
+                '1070934875': {id: 1070934875, name: 'Nick03'},
+            }
+        };
+
+        var client = new FlyingSquirrel.Client(schema, function(refs) {
+            expect(refs).toEqual(['topics.1070937897.entries.*.author']);
+            return Promise.resolve(mockedResponse);
+        });
+        client.IO(function (data) {
+            return {
+                names: _.map(data.topics.get(1070937897).entries.getAll(), function (entry) {
+                    return entry.author.name;
+                }),
+            };
+        }).then(function (result) {
+            expect(result.names).toEqual(['emmah9', 'Nick03']);
+            done();
+        });
+    });
 });
