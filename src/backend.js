@@ -36,13 +36,20 @@ var backendUtils = {
                 if (key === '*') {
                     // We want something for ALL the items in the collection.
                     if (subSchemaType === 'reference') {
-                        return getResource(newPath.join('.'), callbackArgs).then(function(referencedIds) {
-                            _.each(referencedIds, function(referencedId, i) {
-                                subStores = _.map(subStores, function(subStore) {
+                        return getResource(newPath.join('.'), callbackArgs).then(function(result) {
+
+                            console.assert(result.length === 1); // TODO: support deep stars *.*.*
+                            var referencedIds = result[0];
+
+                            // Result is a list of lists of referenecd ids, one per subStore.
+                            subStores = _.map(subStores, function(subStore) {
+                                console.assert(referencedIds);
+                                _.each(referencedIds, function(referencedId, i) {
                                     subStore[i] = referencedId;
                                     return subStore;
                                 });
                             });
+
                             var dereferencedPath = _.flatten([subSchema.ref, referencedIds.join(','), _.slice(path, i+1)]);
                             console.log('Resolving ref collection: ' + ref + ' → ' + dereferencedPath.join('.'));
                             return getRef(schema, dereferencedPath.join('.'), getResource, store);

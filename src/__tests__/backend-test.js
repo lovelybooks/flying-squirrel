@@ -146,13 +146,14 @@ describe('backend stuff', function () {
                 getRef(schema, 'topics.123.entries.*', getResourceSpy, store);
                 tick(1);
                 expectResouceRequest('topics.{}.entries', [['123']]);
-                respondWith([12, 14, 16]);
+                respondWith([[12, 14, 16]]); // Returning list for each requested topic
                 expectResouceRequest('entries.{}', [['12', '14', '16']]);
                 respondWith([
                     {id: 12, text: 'foo'},
                     {id: 14, text: 'bar'},
                     {id: 16, text: 'baz'},
                 ]);
+                expect(_.keys(store.topics[123].entries)).toEqual(['0', '1', '2']);
                 expect(_.values(store.topics[123].entries)).toEqual([12, 14, 16]);
                 expect(_.sortBy(_.keys(store.entries))).toEqual(['12', '14', '16']);
                 expect(store.entries[16].text).toEqual('baz');
