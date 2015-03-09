@@ -36,6 +36,8 @@ var backendUtils = {
                 if (key === '*') {
                     // We want something for ALL the items in the collection.
                     if (subSchemaType === 'reference') {
+                        // 1st return: All references from a collection
+                        // --> resolving reference and replacing '*' with a list of ids
                         return getResource(newPath.join('.'), callbackArgs).then(function(result) {
 
                             console.assert(result.length === 1); // TODO: support deep stars *.*.*
@@ -55,6 +57,8 @@ var backendUtils = {
                             return getRef(schema, dereferencedPath.join('.'), getResource, store);
                         }); // jshint ignore:line
                     } else {
+                        // 2nd return: Objects referenced by '*'
+                        // --> We get their ids and replace the '*' with a list of ids.
                         return getResource(newPath.join('.'), callbackArgs).then(function(referencedIds) {
                             _.each(referencedIds, function(referencedId) {
                                 subStores = _.map(subStores, function(subStore) {
@@ -78,6 +82,8 @@ var backendUtils = {
 
             // Resolving reference.
             if (subSchemaType === 'reference') {
+                // 3rd return: A single reference (which might be inside a '*')
+                // --> resolving the reference (for all items in '*')
                 return getResource(newPath.join('.'), callbackArgs).then(function(referencedIds) {
                     subStores = _.map(subStores, function(subStore, i) {
                         subStore[key] = referencedIds[i];
@@ -103,7 +109,9 @@ var backendUtils = {
             }
         }
 
-        // Fetching whatever was last in the path (because we had no references on our way).
+        // 4th return: Object referenced directly (so we got to the end of our path)
+        // --> Fetching the object (or objects, if inside '*'). This is where the recursion ends.
+        console.assert(subSchemaType === 'object');
         return getResource(newPath.join('.'), callbackArgs).then(function(results) {
             console.assert(key.split(',').length === results.length);
             _.each(subStores, function(subStore) {
