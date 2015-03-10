@@ -16,10 +16,11 @@ function createInterceptor(schemaObj, storeObj, newRefCallback) {
 
     function createSubInterceptorForReference(schemaSubObj, storeSubObj, path) {
         console.assert(schemaSubObj instanceof Ref);
-        console.assert(!storeSubObj || storeSubObj instanceof Ref);
+        console.assert(!storeSubObj || _.isNumber(storeSubObj) || _.isString(storeSubObj));
         return returnValueForGetter(
             schemaSubObj.get(schemaObj)[0], // UGLY
-            storeSubObj ? storeSubObj.get(storeObj) : undefined,
+            // TODO: write test for traversing to entries.123 when store.entries is undefined
+            storeSubObj ? (schemaSubObj.get(storeObj) || {})[storeSubObj] : undefined,
             path
         );
     }

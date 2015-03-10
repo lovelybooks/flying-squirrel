@@ -17,67 +17,6 @@ var frontend = require('../frontend');
 
 describe('frontend stuff', function () {
 
-    describe('createHttpBackend', function () {
-        var createHttpBackend = frontend.createHttpBackend;
-        var schema = {
-            topics: [{
-                id: 123,
-                name: 'Example topic',
-                entries: [new Ref('entries')],
-                openingEntry: new Ref('entries'),
-                participants: [new Ref('users')],
-                creator: new Ref('users'),
-            }],
-            entries: [{
-                id: 123,
-                text: 'Hello world',
-                author: new Ref('users'),
-            }],
-            users: [{
-                id: 123,
-                name: 'Winnie Pooh',
-                avatar: {
-                    url: 'http://example.com/pooh.jpg',
-                }
-            }],
-        };
-        it('should call the get() method', function () {
-            var spy = jasmine.createSpy().and.returnValue(new Promise(function(){}));
-            var backend = createHttpBackend(schema, spy);
-            expect(backend.get(['topics'])).toEqual(jasmine.any(Promise));
-            expect(spy).toHaveBeenCalledWith('/?refs=topics');
-            expect(backend.get(['topics.123'])).toEqual(jasmine.any(Promise));
-            expect(spy).toHaveBeenCalledWith('/?refs=topics.123');
-        });
-        it('should filter the refs', function () {
-            var spy = jasmine.createSpy().and.returnValue(new Promise(function(){}));
-            var backend = createHttpBackend(schema, spy);
-            expect(backend.get(['topics.123', 'topics.123.name'])).toEqual(jasmine.any(Promise));
-            expect(spy).toHaveBeenCalledWith('/?refs=topics.123');
-        });
-        it('should put the data to store', function () {
-            jasmine.clock().install();
-            var done;
-            function httpGet(path) {
-                expect(path).toBeDefined();
-                return Promise.resolve({
-                    topics: {
-                        123: {name: 'Some topic title'},
-                    }
-                });
-            }
-            var backend = createHttpBackend(schema, httpGet);
-            backend.get(['topics.123']).then(function(store) {
-                expect(store).toBe(backend.store);
-                expect(backend.store.topics[123]).toBeDefined();
-                done = true;
-            });
-            jasmine.clock().tick(1);
-            expect(done).toBe(true);
-            jasmine.clock().uninstall();
-        });
-    });
-
     describe('generateApiProxy', function() {
         var generateApiProxy = frontend.generateApiProxy;
 
@@ -107,11 +46,9 @@ describe('frontend stuff', function () {
 
         beforeEach(function () {
             dataSource = {
-                get: jasmine.createSpy('dataSource.get').and.callFake(function () {
-                    return new Promise(function() {
-                        // never resolved
-                    });
-                }),
+                get: jasmine.createSpy('dataSource.get').and.returnValue(
+                    new Promise(function() { /* never resolved */ })
+                ),
             };
             API = generateApiProxy(schema, dataSource);
             jasmine.clock().install();
@@ -149,11 +86,14 @@ describe('frontend stuff', function () {
                 };
             });
             jasmine.clock().tick(5);
-            expect(dataSource.get).not.toHaveBeenCalledWith('topics');
-            expect(dataSource.get).toHaveBeenCalledWith('topics.123');
-            expect(dataSource.get).toHaveBeenCalledWith('topics.123.entries'); // from getAll()
-            expect(dataSource.get).toHaveBeenCalledWith('topics.123.entries.0.author');
-            expect(dataSource.get).toHaveBeenCalledWith('topics.123.entries.0.author.avatar');
+            expect(dataSource.get).toHaveBeenCalledWith([
+                'topics.123',
+                'topics.123.entries.*',
+                'topics.123.entries.0',
+                'topics.123.entries.0.author',
+                'topics.123.entries.0.author.avatar',
+            ]);
+            expect(dataSource.get.calls.count()).toBe(1);
         });
     });
 });

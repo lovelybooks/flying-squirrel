@@ -5,6 +5,7 @@ var _ = require('lodash');
 
 var Ref = require('./Ref');
 var backendUtils = require('./backend');
+var frontendUtils = require('./frontend');
 var schemaUtils = require('./schemaUtils');
 
 
@@ -48,8 +49,15 @@ Server.prototype.fetch = function fetch(ref) {
 };
 
 function Client (schema, fetchRefsCallback) {
-
+    this.schema = schema;
+    this.fetchRefsCallback = fetchRefsCallback;
 }
+Client.prototype.IO = function (callback) {
+    var API = frontendUtils.generateApiProxy(this.schema, {get: this.fetchRefsCallback});
+    return Promise.resolve().then(function () {
+        return API.IO(callback);
+    });
+};
 
 var FlyingSquirrel = {
     Server: Server,

@@ -190,20 +190,15 @@ var schemaUtils = {
     filterRefs: function filterRefs(schema, refs) {
         console.assert(_.isArray(refs), 'filterRefs: ref array expected');
         var refsMap = {};
-        _.each(refs, function (ref) {
-            refsMap[ref] = true;
-        });
         function refUp(ref) {
-            return _.dropRight(ref.split('.')).join('.');
+            return _.dropRight(ref.split('.')).join('.'); // UGLY
         }
-        _.each(_.keys(refsMap), function (ref) {
-            if (schemaUtils.getTypeDeep(schema, ref) === 'primitive') {
-                delete refsMap[ref];
-            } else {
-                var up = refUp(ref);
-                if (up in refsMap) {
-                    delete refsMap[up];
-                }
+        _.each(refs, function (ref) {
+            var type = schemaUtils.getTypeDeep(schema, ref);
+            if (type === 'primitive') {
+                refsMap[refUp(ref)] = true;
+            } else if (type === 'object' || type === 'reference') {
+                refsMap[ref] = true;
             }
         });
         return _.keys(refsMap);

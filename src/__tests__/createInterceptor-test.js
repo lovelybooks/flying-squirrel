@@ -71,11 +71,11 @@ describe('createInterceptor', function () {
                 '123': {
                     id: 123,
                     name: 'Example topic from Store',
-                    entries: [
-                        new Ref('entries.12'),
-                        new Ref('entries.15'),
-                    ],
-                }
+                    entries: {
+                        '0': 12,
+                        '1': '15',
+                    },
+                },
             },
             entries: {
                 '12': {
@@ -83,7 +83,7 @@ describe('createInterceptor', function () {
                 },
                 '15': {
                     text: 'Sample entry from store',
-                    author: new Ref('users.42'),
+                    author: 42,
                 },
             },
             users: {
@@ -135,7 +135,7 @@ describe('createInterceptor', function () {
 
         it('has inconsistent API that should be refactored', function () {
             var s1 = interceptor.topics.get(123).entries.get(1).text;
-            var s2 = dataStoreExample.topics[123].entries[1].get(dataStoreExample).text;
+            var s2 = dataStoreExample.entries[dataStoreExample.topics[123].entries[1]].text;
             expect(s1).toEqual(s2);
         });
     });

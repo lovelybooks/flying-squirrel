@@ -152,19 +152,36 @@ describe('schemaUtils', function () {
             topics: [{
                 name: 'Example topic',
                 entries: [new Ref('entries')],
+                stats: {
+                    viewCount: 23,
+                },
             }],
             entries: [{
                 text: 'Hello world',
             }],
         };
-        it('filters out duplicate refs', function () {
-            expect(filterRefs(schema, ['topics.123', 'topics.123'])).toEqual(['topics.123']);
+        it('fetches objects for primitives', function () {
+            expect(filterRefs(schema, ['topics.123.name'])).toEqual(['topics.123']);
         });
-        it('collapses nested refs', function () {
-            expect(filterRefs(schema, ['topics', 'topics.123'])).toEqual(['topics.123']);
+        it('filters out duplicate refs', function () {
+            expect(filterRefs(schema, [
+                'topics.123.name',
+                'topics.123.name',
+            ])).toEqual(['topics.123']);
         });
         it('strips primitive refs', function () {
-            expect(filterRefs(schema, ['topics.123', 'topics.123.name'])).toEqual(['topics.123']);
+            expect(filterRefs(schema, [
+                'topics.123',
+                'topics.123.name',
+            ])).toEqual(['topics.123']);
+        });
+        it('doesn\'t remove objects if their primitives were accessed', function () {
+            expect(filterRefs(schema, [
+                'topics.123',
+                'topics.123.name',
+                'topics.123.stats',
+                'topics.123.stats.viewCount',
+            ])).toEqual(['topics.123', 'topics.123.stats']);
         });
     });
 });
