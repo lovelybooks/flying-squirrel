@@ -9,7 +9,6 @@ var schemaUtils = require('./schemaUtils');
 
 
 function Server (schema, resourceHandlers) {
-
     _.each(schemaUtils.checkResourceHandlers(schema, resourceHandlers), function(problem) {
         console.warn('FlyingSquirrel: ' + problem);
     });
@@ -20,29 +19,37 @@ function Server (schema, resourceHandlers) {
     this.resourceHandlersInfo = resourceHandlersInfo;
 }
 Server.prototype.fetchResource = function fetchResource(resource, args) {
+    var handler = this.resourceHandlers[resource];
     var handlerInfo = this.resourceHandlersInfo[resource];
-    console.assert(handlerInfo);
-    console.assert(args.length === handlerInfo.inCollections.length);
-    console.assert(args.length === (resource.match(/\{\}/g) || []).length);
-    console.log('Fetching from ' + resource, args);
-    var promiseOrResult = this.resourceHandlers[resource].apply(null, args);
-    console.assert(promiseOrResult);
-    return Promise.resolve(promiseOrResult).then(function (result) {
+    return Promise.resolve().then(function () {
+        console.assert(_.isFunction(handler), 'Handler for ' + resource + ' not found');
+        console.assert(handlerInfo);
+        console.assert(args.length === handlerInfo.inCollections.length);
+        console.assert(args.length === (resource.match(/\{\}/g) || []).length);
+        console.log('Fetching from ' + resource, args);
+        var promiseOrResult = handler.apply(null, args);
+        console.assert(promiseOrResult);
+        return promiseOrResult;
+    }).then(function (result) {
         _.each(schemaUtils.checkResourceResult(resource, handlerInfo, result), function(problem) {
-            console.warn('FlyingSquirrel: ' + problem);
+            console.error('FlyingSquirrel: ' + problem);
         });
         return result;
     });
 };
 Server.prototype.fetch = function fetch(ref) {
-    var store = {};
     var fetchResource = this.fetchResource.bind(this);
-    return backendUtils.fetchRef(this.schema, ref, fetchResource, store).then(function() {
-        return store;
+    var schema = this.schema;
+
+    // We use Promise.resolve().then(...) so that exceptions from fetchRef will reject the Promise.
+    return Promise.resolve().then(function () {
+        return backendUtils.fetchRef(schema, ref, fetchResource, {});
     });
 };
 
-function Client (schema, fetchRefsCallback) {}
+function Client (schema, fetchRefsCallback) {
+
+}
 
 var FlyingSquirrel = {
     Server: Server,

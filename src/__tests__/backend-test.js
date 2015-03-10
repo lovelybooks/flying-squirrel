@@ -92,7 +92,7 @@ describe('backend stuff', function () {
                 tick(1);
             }
 
-            it('works with deep references', function () {
+            it('works with deep references (topics.123.openingEntry.author)', function () {
                 fetchRef(schema, 'topics.123.openingEntry.author', getResourceSpy, store);
                 tick(1);
                 expectResouceRequest('topics.{}.openingEntry', [['123']]);
@@ -105,7 +105,7 @@ describe('backend stuff', function () {
                 expect(store.entries[1234].author).toEqual(777);
                 expect(store.users[777]).toEqual({name: 'James Bond'});
             });
-            it('works with \'*\' for collections of refs', function () {
+            it('works with \'*\' for collections of refs (topics.123.entries.*)', function () {
                 fetchRef(schema, 'topics.123.entries.*', getResourceSpy, store);
                 tick(1);
                 expectResouceRequest('topics.{}.entries', [['123']]);
@@ -121,7 +121,7 @@ describe('backend stuff', function () {
                 expect(_.sortBy(_.keys(store.entries))).toEqual(['12', '14', '16']);
                 expect(store.entries[16].text).toEqual('baz');
             });
-            it('works with \'*\' for collections of objects', function () {
+            it('works with \'*\' for collections of objects (entries.*)', function () {
                 fetchRef(schema, 'entries.*', getResourceSpy, store);
                 expectResouceRequest('entries', []);
                 respondWith([12, 14, 16]);
@@ -134,7 +134,7 @@ describe('backend stuff', function () {
                 expect(_.sortBy(_.keys(store.entries))).toEqual(['12', '14', '16']);
                 expect(store.entries[16].text).toEqual('baz');
             });
-            it('works with \'*\' for stuff inside collections', function () {
+            it('works with \'*\' for stuff inside collections (entries.*.author)', function () {
                 fetchRef(schema, 'entries.*.author', getResourceSpy, store);
                 tick(1);
                 expectResouceRequest('entries', []);
