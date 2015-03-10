@@ -96,6 +96,7 @@ var schemaUtils = {
         });
     },
 
+    // TODO tests for this function
     checkResourceHandlers: function checkResourceHandlers(schema, resourceHandlers) {
         var problems = [];
         var resourcesInfo = schemaUtils.getResourcesInfo(schema);
@@ -120,6 +121,31 @@ var schemaUtils = {
             problems.push('Unexpected handler for: ' + unknownHandler);
         });
         return problems;
+    },
+
+    // TODO tests for this function
+    checkResourceResult: function checkResourceResult(resourceName, handlerInfo, result) {
+        var subResult = result;
+        _.each(handlerInfo.inCollections, function () {
+            subResult = subResult[0];
+        });
+        var problemMessage = null;
+        if (handlerInfo.type === 'reference' && !_.isNumber(subResult)) {
+            problemMessage = 'reference (integer) expected';
+        }
+        if (handlerInfo.type === 'object' && (!_.isObject(subResult) || _.isArray(subResult))) {
+            problemMessage = 'object expected';
+        }
+        if (handlerInfo.type === 'collection' && !_.isArray(subResult)) {
+            problemMessage = 'list (array) expected';
+        }
+        if (problemMessage) {
+            problemMessage = schemaUtils.formatNestedType(_.map(handlerInfo.inCollections, _.constant('list')).concat(problemMessage));
+            return [
+                'Wrong result type from resource handler ' + resourceName + ': ' + problemMessage,
+            ];
+        }
+        return [];
     },
 
     determineType: function determineType(schemaObj) {

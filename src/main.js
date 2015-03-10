@@ -28,29 +28,9 @@ Server.prototype.fetchResource = function fetchResource(resource, args) {
     var promiseOrResult = this.resourceHandlers[resource].apply(null, args);
     console.assert(promiseOrResult);
     return Promise.resolve(promiseOrResult).then(function (result) {
-        var subResult = result;
-        _.each(handlerInfo.inCollections, function () {
-            subResult = subResult[0];
+        _.each(schemaUtils.checkResourceResult(resource, handlerInfo, result), function(problem) {
+            console.warn('FlyingSquirrel: ' + problem);
         });
-        var problemMessage = null;
-        if (handlerInfo.type === 'reference' && !_.isNumber(subResult)) {
-            problemMessage = 'reference (integer) expected';
-        }
-        if (handlerInfo.type === 'object' && (!_.isObject(subResult) || _.isArray(subResult))) {
-            problemMessage = 'object expected';
-        }
-        if (handlerInfo.type === 'collection' && !_.isArray(subResult)) {
-            problemMessage = 'list (array) expected';
-        }
-        if (problemMessage) {
-            _.each(handlerInfo.inCollections, function () {
-                problemMessage = 'list of ' + problemMessage.replace(/(?= )|$/, 's');
-            });
-            console.error(
-                'FlyingSquirrel: Wrong result type from resource handler ' + resource + ': ' +
-                problemMessage
-            );
-        }
         return result;
     });
 };
