@@ -57,12 +57,12 @@ Server.prototype.fetchResource = function fetchResource(resource, args) {
 Server.prototype.fetch = function fetch(ref) {
     var store = {};
     var fetchResource = this.fetchResource.bind(this);
-    return backendUtils.getRef(this.schema, ref, fetchResource, store).then(function() {
+    return backendUtils.fetchRef(this.schema, ref, fetchResource, store).then(function() {
         return store;
     });
 };
 
-function Client (schema, getRefsCallback) {}
+function Client (schema, fetchRefsCallback) {}
 
 var FlyingSquirrel = {
     Server: Server,

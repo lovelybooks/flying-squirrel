@@ -50,8 +50,9 @@ var dbResourceHandlers = {
 
 
 describe('backend stuff', function () {
-    var getRef = backendUtils.getRef;
-    describe('getRef', function () {
+
+    describe('fetchRef', function () {
+        var fetchRef = backendUtils.fetchRef;
         var schema = {
             topics: [{
                 id: 123,
@@ -86,14 +87,15 @@ describe('backend stuff', function () {
             tick(1);
             jasmine.clock().uninstall();
         });
+
         it('calls getResource to get data', function () {
-            getRef(schema, 'entries.1234', getResourceSpy, store);
+            fetchRef(schema, 'entries.1234', getResourceSpy, store);
             expect(getResourceSpy).toHaveBeenCalledWith('entries.{}', [['1234']]);
         });
         it('resolves the promise', function () {
             var done = false;
             getResourceSpy.and.returnValue(Promise.resolve([{}]));
-            getRef(schema, 'entries.1234', getResourceSpy, store).then(function () {
+            fetchRef(schema, 'entries.1234', getResourceSpy, store).then(function () {
                 done = true;
             });
             tick(1);
@@ -101,17 +103,18 @@ describe('backend stuff', function () {
         });
         it('puts the data in store', function () {
             getResourceSpy.and.returnValue(Promise.resolve([{text: 'hello'}]));
-            getRef(schema, 'entries.1234', getResourceSpy, store);
+            fetchRef(schema, 'entries.1234', getResourceSpy, store);
             tick(1);
             expect(store.entries[1234]).toEqual({text: 'hello'});
         });
         it('works with references', function () {
             getResourceSpy.and.returnValue(Promise.resolve([777]));
-            getRef(schema, 'entries.1234.author', getResourceSpy, store);
+            fetchRef(schema, 'entries.1234.author', getResourceSpy, store);
             tick(1);
             expect(getResourceSpy).toHaveBeenCalledWith('entries.{}.author', [['1234']]);
             expect(getResourceSpy).toHaveBeenCalledWith('users.{}', [['777']]);
         });
+
         describe('advanced tests', function () {
             var resolve;
             beforeEach(function () {
@@ -129,8 +132,9 @@ describe('backend stuff', function () {
                 resolve(response);
                 tick(1);
             }
+
             it('works with deep references', function () {
-                getRef(schema, 'topics.123.openingEntry.author', getResourceSpy, store);
+                fetchRef(schema, 'topics.123.openingEntry.author', getResourceSpy, store);
                 tick(1);
                 expectResouceRequest('topics.{}.openingEntry', [['123']]);
                 respondWith([1234]);
@@ -143,7 +147,7 @@ describe('backend stuff', function () {
                 expect(store.users[777]).toEqual({name: 'James Bond'});
             });
             it('works with \'*\' for collections of refs', function () {
-                getRef(schema, 'topics.123.entries.*', getResourceSpy, store);
+                fetchRef(schema, 'topics.123.entries.*', getResourceSpy, store);
                 tick(1);
                 expectResouceRequest('topics.{}.entries', [['123']]);
                 respondWith([[12, 14, 16]]); // Returning list for each requested topic
@@ -159,7 +163,7 @@ describe('backend stuff', function () {
                 expect(store.entries[16].text).toEqual('baz');
             });
             it('works with \'*\' for collections of objects', function () {
-                getRef(schema, 'entries.*', getResourceSpy, store);
+                fetchRef(schema, 'entries.*', getResourceSpy, store);
                 expectResouceRequest('entries', []);
                 respondWith([12, 14, 16]);
                 expectResouceRequest('entries.{}', [['12', '14', '16']]);
@@ -172,7 +176,7 @@ describe('backend stuff', function () {
                 expect(store.entries[16].text).toEqual('baz');
             });
             it('works with \'*\' for stuff inside collections', function () {
-                getRef(schema, 'entries.*.author', getResourceSpy, store);
+                fetchRef(schema, 'entries.*.author', getResourceSpy, store);
                 tick(1);
                 expectResouceRequest('entries', []);
                 respondWith([12, 14, 16]);
