@@ -142,7 +142,8 @@ var schemaUtils = {
         if (problemMessage) {
             problemMessage = schemaUtils.formatNestedType(_.map(handlerInfo.inCollections, _.constant('list')).concat(problemMessage));
             return [
-                'Wrong result type from resource handler ' + resourceName + ': ' + problemMessage,
+                'Wrong result type from resource handler ' + resourceName + ': ' + problemMessage +
+                ', got: ' + JSON.stringify(result, null, 4)
             ];
         }
         return [];
