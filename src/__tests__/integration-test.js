@@ -83,6 +83,9 @@ describe('FlyingSquirrel integration test (for main.js)', function () {
         server.fetch('topics.123.openingEntry.author').then(function (store) {
             expect(store.users[1337]).toEqual({id:1337, name:'James Bond'});
             done();
+        }).catch(function(err) {
+            expect(false).toBe(true, err);
+            done();
         });
     });
 

@@ -27,7 +27,8 @@ Server.prototype.fetchResource = function fetchResource(resource, args) {
         console.assert(handlerInfo);
         console.assert(args.length === handlerInfo.inCollections.length);
         console.assert(args.length === (resource.match(/\{\}/g) || []).length);
-        console.log('Fetching from ' + resource, args.join(', '));
+        console.log('Fetching from ' + resource + ' ' +
+                _.map(args, function(arg) { return JSON.stringify(arg); }).join(', '));
         var promiseOrResult = handler.apply(null, args);
         console.assert(promiseOrResult);
         return promiseOrResult;

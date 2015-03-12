@@ -126,11 +126,13 @@ var schemaUtils = {
     // TODO tests for this function
     checkResourceResult: function checkResourceResult(resourceName, handlerInfo, args, result) {
         var subResult = result;
-        var subArg = args;
 
+        var expectedSubResultId;
         var problemMessage = null;
-        _.each(handlerInfo.inCollections, function () {
+        _.each(handlerInfo.inCollections, function (collectionName, collectionIndex) {
+            var subArg = args[collectionIndex];
             console.assert(_.isArray(subArg), 'Invalid args');
+
             if (!_.isArray(subResult)) {
                 problemMessage = 'Expected sub-result to be an array of length ' + subArg.length + ', but got ' + JSON.stringify(subResult);
                 return false; // Stop iteration.
@@ -142,12 +144,11 @@ var schemaUtils = {
             for (var i=0; i<subResult.length; i++) {
                 if (subResult[i] != null) {
                     subResult = subResult[i];
-                    subArg = subArg[i];
+                    expectedSubResultId = subArg[i];
                     break;
                 }
                 if (i === subResult.length - 1) {
                     console.warn('Got no result from ' + resourceName + ' for args: ' + args.join(', '));
-                    subArg = subArg[i];
                     subResult = null;
                     return false;
                 }
@@ -171,27 +172,27 @@ var schemaUtils = {
             problemMessage = 'list (array) expected';
         }
         if (problemMessage) {
-            var nestedType = _.map(handlerInfo.inCollections, _.constant('list')).concat(problemMessage);
+            var nestedType = _.map(handlerInfo.inCollections, _.constant('list'));
+            nestedType.push(problemMessage);
             return ['Wrong result type: ' + schemaUtils.formatNestedType(nestedType) +
                     ', got: ' + JSON.stringify(result)];
         }
 
         var problems = [];
         if (handlerInfo.type === 'object') {
-            if (subResult.id && subResult.id != subArg) { // jshint ignore:line
-                problems.push('object with id=' + subArg + ' expected');
+            if (!expectedSubResultId || subResult.id && subResult.id != expectedSubResultId) { // jshint ignore:line
+                problems.push('object with id=' + expectedSubResultId + ' expected');
             }
             _.each(_.keys(subResult), function (fieldName) {
                 if (fieldName !== 'id' && !_.contains(handlerInfo.primitives, fieldName)) {
                     problems.push('Unexpected field ' + fieldName);
-                }
-                if (_.isObject(subResult[fieldName])) {
+                } else if (_.isObject(subResult[fieldName])) {
                     problems.push('Expected primitive value for ' + fieldName);
                 }
             });
             _.each(handlerInfo.primitives, function (fieldName) {
                 if (fieldName !== 'id' && !_.has(subResult, fieldName)) {
-                    problems.push('Expected field ' + fieldName + ' not found');
+                    problems.push('Field ' + fieldName + ' not found');
                 }
             });
         }

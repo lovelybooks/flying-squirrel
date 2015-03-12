@@ -135,48 +135,48 @@ describe('schemaUtils', function () {
             var endpoint = 'topics.{}';
             var check = checkResourceResult.bind(null, endpoint, resourcesInfo[endpoint]);
             // valid examples
-            expect(check([123], [exampleTopic])).toEqual([], '1 result - ok');
-            expect(check([456], [null])).toEqual([], 'no result, but ok');
-            expect(check([123, 123], [exampleTopic, exampleTopic])).toEqual([], '2 results - ok');
-            expect(check([456, 123], [null, exampleTopic])).toEqual([], '1st result failed, 2nd ok');
+            expect(check([[123]], [exampleTopic])).toEqual([], '1 result - ok');
+            expect(check([[456]], [null])).toEqual([], 'no result, but ok');
+            expect(check([[123, 123]], [exampleTopic, exampleTopic])).toEqual([], '2 results - ok');
+            expect(check([[456, 123]], [null, exampleTopic])).toEqual([], '1st result failed, 2nd ok');
             // invalid examples
-            expect(check([123], null)).not.toEqual([], 'null');
-            expect(check([123], exampleTopic)).not.toEqual([], 'not wrapped');
-            expect(check([123], [[exampleTopic]])).not.toEqual([], 'wrapped too much');
-            expect(check([123], [])).not.toEqual([], 'empty list');
-            expect(check([123], {'0': exampleTopic})).not.toEqual([], '{0: stuff}');
-            expect(check([123, 456], [exampleTopic])).not.toEqual([], 'too little');
-            expect(check([123], [exampleTopic, null])).not.toEqual([], 'too many');
-            expect(check([456], [exampleTopic])).not.toEqual([], 'mismatched id');
+            expect(check([[123]], null)).not.toEqual([], 'null');
+            expect(check([[123]], exampleTopic)).not.toEqual([], 'not wrapped');
+            expect(check([[123]], [[exampleTopic]])).not.toEqual([], 'wrapped too much');
+            expect(check([[123]], [])).not.toEqual([], 'empty list');
+            expect(check([[123]], {'0': exampleTopic})).not.toEqual([], '{0: stuff}');
+            expect(check([[123, 456]], [exampleTopic])).not.toEqual([], 'too little');
+            expect(check([[123]], [exampleTopic, null])).not.toEqual([], 'too many');
+            expect(check([[456]], [exampleTopic])).not.toEqual([], 'mismatched id');
             expect(console.warn).toHaveBeenCalled();
         });
         it('should work for ref endpoints (topics.{}.openingEntry)', function () {
             var endpoint = 'topics.{}.openingEntry';
             var check = checkResourceResult.bind(null, endpoint, resourcesInfo[endpoint]);
             // valid examples
-            expect(check([123], [14])).toEqual([], '1 result - ok');
-            expect(check([456], [null])).toEqual([], 'no result, but ok');
+            expect(check([[123]], [14])).toEqual([], '1 result - ok');
+            expect(check([[456]], [null])).toEqual([], 'no result, but ok');
             // invalid examples
-            expect(check([123], null)).not.toEqual([], 'null');
-            expect(check([123], 14)).not.toEqual([], 'not wrapped');
-            expect(check([123], [[14]])).not.toEqual([], 'wrapped too much');
-            expect(check([123], [])).not.toEqual([], 'empty list');
-            expect(check([123, 456], [14])).not.toEqual([], 'too little');
-            expect(check([123], [14, null])).not.toEqual([], 'too many');
+            expect(check([[123]], null)).not.toEqual([], 'null');
+            expect(check([[123]], 14)).not.toEqual([], 'not wrapped');
+            expect(check([[123]], [[14]])).not.toEqual([], 'wrapped too much');
+            expect(check([[123]], [])).not.toEqual([], 'empty list');
+            expect(check([[123, 456]], [14])).not.toEqual([], 'too little');
+            expect(check([[123]], [14, null])).not.toEqual([], 'too many');
             expect(console.warn).toHaveBeenCalled();
         });
         it('should check the schema for expected fields', function () {
             var endpoint = 'topics.{}';
             var check = checkResourceResult.bind(null, endpoint, resourcesInfo[endpoint]);
             // valid examples
-            expect(check([123], [{name: 'Hello', unicorns: 5}])).toEqual([], 'ok');
-            expect(check([123], [{name: 'Hello', unicorns: 0}])).toEqual([], 'falsy field value is ok');
-            expect(check([123], [{id: 123, name: 'Hello', unicorns: 5}])).toEqual([], 'id can be there or not');
+            expect(check([[123]], [{name: 'Hello', unicorns: 5}])).toEqual([], 'ok');
+            expect(check([[123]], [{name: 'Hello', unicorns: 0}])).toEqual([], 'falsy field value is ok');
+            expect(check([[123]], [{id: 123, name: 'Hello', unicorns: 5}])).toEqual([], 'id can be there or not');
             // invalid examples
-            expect(check([123], [{id: 456, name: 'Hello', unicorns: 5}])).not.toEqual([], 'mismatched id');
-            expect(check([123], [{name: 'Hello', unicorns: {}}])).not.toEqual([], 'object instead of primitive');
-            expect(check([123], [{name: 'Hello'}])).not.toEqual([], 'missing field');
-            expect(check([123], [{name: 'Hello', unicorns: 0, foo: 'bar'}])).not.toEqual([], 'unexpected field');
+            expect(check([[123]], [{id: 456, name: 'Hello', unicorns: 5}])).not.toEqual([], 'mismatched id');
+            expect(check([[123]], [{name: 'Hello', unicorns: {}}])).not.toEqual([], 'object instead of primitive');
+            expect(check([[123]], [{name: 'Hello'}])).not.toEqual([], 'missing field');
+            expect(check([[123]], [{name: 'Hello', unicorns: 0, foo: 'bar'}])).not.toEqual([], 'unexpected field');
         });
     });
 
