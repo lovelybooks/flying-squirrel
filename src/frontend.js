@@ -13,6 +13,8 @@ var frontend = {
 
         var store = {};
 
+        var refsWeAlreadyFetched = {};
+
         function IO(callback) {
 
             function iterate() {
@@ -27,6 +29,18 @@ var frontend = {
                     callbackError = e;
                 }
                 if (newRefs.length) {
+
+                    var filteredNewRefs = schemaUtils.filterRefs(schema, newRefs);
+
+                    _.each(filteredNewRefs, function(newRef) {
+                        if (refsWeAlreadyFetched[newRef]) {
+                            throw ('FlyingSquirrel internal error: ref ' + newRef +
+                                ' was fetched, but it looks like it isn\'t present in the store: ' +
+                                JSON.stringify(store, null, 4));
+                        }
+                        refsWeAlreadyFetched[newRef] = true;
+                    });
+
                     // Ah, the callback needs more data!
                     // console.log('Ah, the callback needs more data!', JSON.stringify(newRefs, null, 4));
                     // console.log('Filtered:', JSON.stringify(schemaUtils.filterRefs(schema, newRefs), null, 4));
@@ -34,9 +48,12 @@ var frontend = {
                         console.log('by the way... ', callbackError);
                     }
                     // we'll fetch the data and try again
-                    return dataSource.get(schemaUtils.filterRefs(schema, newRefs)).then(function (newStoreData) {
+                    return dataSource.get(filteredNewRefs).then(function (newStoreData) {
                         console.assert(_.isObject(newStoreData));
+
                         // TODO: assert that the new store really contains the data we requested
+
+
                         _.merge(store, newStoreData);
                         return iterate();
                     });

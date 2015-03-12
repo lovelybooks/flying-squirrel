@@ -109,12 +109,13 @@ describe('FlyingSquirrel integration test (for main.js)', function () {
             },
         };
 
-        var client = new FlyingSquirrel.Client(schema, function(refs) {
+        var getRefsSpy = jasmine.createSpy('getRefs').and.callFake(function(refs) {
             // console.log('fetchRefsCallback', JSON.stringify(refs, null, 4));
             expect(refs).toContain('topics.1070937897.entries.*.author');
             // TODO: expect(refs).toEqual(['topics.1070937897.entries.*.author']);
             return Promise.resolve(mockedResponse);
         });
+        var client = new FlyingSquirrel.Client(schema, getRefsSpy);
         client.IO(function (data) {
             return {
                 names: _.map(data.topics.get(1070937897).entries.getAll(), function (entry) {
@@ -123,6 +124,10 @@ describe('FlyingSquirrel integration test (for main.js)', function () {
             };
         }).then(function (result) {
             expect(result.names).toEqual(['Nick03', 'emmah9']);
+            expect(getRefsSpy.calls.count()).toBe(1);
+            done();
+        }).catch(function (err) {
+            expect(false).toBe(true, err);
             done();
         });
     });
