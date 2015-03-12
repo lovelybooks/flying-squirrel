@@ -6,18 +6,22 @@ var Ref = require('../Ref');
 var schemaUtils = require('../schemaUtils');
 
 describe('schemaUtils', function () {
+    var schema = {
+        topics: [{
+            name: 'Example topic',
+            unicorns: 10,
+            entries: [new Ref('entries')],
+            openingEntry: new Ref('entries'),
+            stats: {
+                viewCount: 23,
+            },
+        }],
+        entries: [{
+            text: 'Hello world',
+        }],
+    };
 
     describe('getResourcesInfo', function() {
-        var schema = {
-            topics: [{
-                name: 'Example topic',
-                entries: [new Ref('entries')],
-                openingEntry: new Ref('entries'),
-            }],
-            entries: [{
-                text: 'Hello world',
-            }],
-        };
         it('generates a list of resources for schema', function() {
             expect(_.sortBy(_.keys(schemaUtils.getResourcesInfo(schema)))).toEqual([
                 'entries',
@@ -26,6 +30,7 @@ describe('schemaUtils', function () {
                 'topics.{}',
                 'topics.{}.entries',
                 'topics.{}.openingEntry',
+                'topics.{}.stats',
             ]);
         });
         it('gives types of endpoints and of objects in collections', function() {
@@ -52,27 +57,20 @@ describe('schemaUtils', function () {
         });
         it('gives some additional info for the resources', function() {
             var resourcesInfo = schemaUtils.getResourcesInfo(schema);
-            expect(resourcesInfo.topics).toEqual(jasmine.objectContaining({
-                type: 'collection',
-                inCollections: [],
-                collectionOf: 'object',
-            }));
-            expect(resourcesInfo['topics.{}']).toEqual(jasmine.objectContaining({
-                type: 'object',
-                inCollections: ['topics'],
-            }));
-            expect(resourcesInfo['topics.{}.openingEntry']).toEqual(jasmine.objectContaining({
+            expect(resourcesInfo['topics.{}.openingEntry']).toEqual({
                 type: 'reference',
                 inCollections: ['topics'],
-                referenceTo: 'entries',
-            }));
-            expect(resourcesInfo['topics.{}.entries']).toEqual(jasmine.objectContaining({
-                type: 'collection',
-                collectionOf: 'reference',
-            }));
-            expect(resourcesInfo['entries.{}']).toEqual(jasmine.objectContaining({
+                args: ['topicsIds (a list of integers)'],
+                returnType: ['list', 'integer'],
+                referenceTo: 'entries', // for references
+            });
+            expect(resourcesInfo['entries.{}']).toEqual({
+                type: 'object',
                 inCollections: ['entries'],
-            }));
+                args: ['entriesIds (a list of integers)'],
+                returnType: ['list', 'object'],
+                primitives: ['text'], // for objects
+            });
         });
     });
 
@@ -102,33 +100,88 @@ describe('schemaUtils', function () {
             };
         });
         it('returns an empty list when all is ok', function() {
-            expect(checkResourceHandlers(schema, myHandlers).length).toEqual(0);
+            expect(checkResourceHandlers(schema, myHandlers)).toEqual([]);
         });
         it('detects missing resources', function() {
             delete myHandlers.entries;
-            expect(checkResourceHandlers(schema, myHandlers).length).toEqual(1);
+            var problems = checkResourceHandlers(schema, myHandlers);
+            expect(problems).toEqual([jasmine.any(String)]);
+            expect(problems[0]).toContain('Missing');
         });
         it('detects unexpected resources', function() {
             myHandlers.unexpected = function () {};
-            expect(checkResourceHandlers(schema, myHandlers).length).toEqual(1);
+            var problems = checkResourceHandlers(schema, myHandlers);
+            expect(problems).toEqual([jasmine.any(String)]);
+            expect(problems[0]).toContain('Unexpected');
         });
         it('detects invalid resource handlers', function() {
-            myHandlers.entries = function (foo, bar, baz) {};
-            expect(checkResourceHandlers(schema, myHandlers).length).toEqual(1);
+            myHandlers.entries = function (foo, bar, baz) {}; // jshint ignore:line
+            var problems = checkResourceHandlers(schema, myHandlers);
+            expect(problems).toEqual([jasmine.any(String)]);
+            expect(problems[0]).toContain('Invalid');
+        });
+    });
+
+    describe('checkResourceResult', function () {
+        var checkResourceResult = schemaUtils.checkResourceResult;
+        var exampleTopic = {id: 123, name: 'Hello!', unicorns: 5};
+        var exampleEntry = {id: 14, name: 'This is my post'};
+        var resourcesInfo;
+        beforeEach(function () {
+            resourcesInfo = schemaUtils.getResourcesInfo(schema);
+            spyOn(console, 'warn');
+        });
+        it('should work for collection item endpoints (topics.{})', function () {
+            var endpoint = 'topics.{}';
+            var check = checkResourceResult.bind(null, endpoint, resourcesInfo[endpoint]);
+            // valid examples
+            expect(check([123], [exampleTopic])).toEqual([], '1 result - ok');
+            expect(check([456], [null])).toEqual([], 'no result, but ok');
+            expect(check([123, 123], [exampleTopic, exampleTopic])).toEqual([], '2 results - ok');
+            expect(check([456, 123], [null, exampleTopic])).toEqual([], '1st result failed, 2nd ok');
+            // invalid examples
+            expect(check([123], null)).not.toEqual([], 'null');
+            expect(check([123], exampleTopic)).not.toEqual([], 'not wrapped');
+            expect(check([123], [[exampleTopic]])).not.toEqual([], 'wrapped too much');
+            expect(check([123], [])).not.toEqual([], 'empty list');
+            expect(check([123], {'0': exampleTopic})).not.toEqual([], '{0: stuff}');
+            expect(check([123, 456], [exampleTopic])).not.toEqual([], 'too little');
+            expect(check([123], [exampleTopic, null])).not.toEqual([], 'too many');
+            expect(check([456], [exampleTopic])).not.toEqual([], 'mismatched id');
+            expect(console.warn).toHaveBeenCalled();
+        });
+        it('should work for ref endpoints (topics.{}.openingEntry)', function () {
+            var endpoint = 'topics.{}.openingEntry';
+            var check = checkResourceResult.bind(null, endpoint, resourcesInfo[endpoint]);
+            // valid examples
+            expect(check([123], [14])).toEqual([], '1 result - ok');
+            expect(check([456], [null])).toEqual([], 'no result, but ok');
+            // invalid examples
+            expect(check([123], null)).not.toEqual([], 'null');
+            expect(check([123], 14)).not.toEqual([], 'not wrapped');
+            expect(check([123], [[14]])).not.toEqual([], 'wrapped too much');
+            expect(check([123], [])).not.toEqual([], 'empty list');
+            expect(check([123, 456], [14])).not.toEqual([], 'too little');
+            expect(check([123], [14, null])).not.toEqual([], 'too many');
+            expect(console.warn).toHaveBeenCalled();
+        });
+        it('should check the schema for expected fields', function () {
+            var endpoint = 'topics.{}';
+            var check = checkResourceResult.bind(null, endpoint, resourcesInfo[endpoint]);
+            // valid examples
+            expect(check([123], [{name: 'Hello', unicorns: 5}])).toEqual([], 'ok');
+            expect(check([123], [{name: 'Hello', unicorns: 0}])).toEqual([], 'falsy field value is ok');
+            expect(check([123], [{id: 123, name: 'Hello', unicorns: 5}])).toEqual([], 'id can be there or not');
+            // invalid examples
+            expect(check([123], [{id: 456, name: 'Hello', unicorns: 5}])).not.toEqual([], 'mismatched id');
+            expect(check([123], [{name: 'Hello', unicorns: {}}])).not.toEqual([], 'object instead of primitive');
+            expect(check([123], [{name: 'Hello'}])).not.toEqual([], 'missing field');
+            expect(check([123], [{name: 'Hello', unicorns: 0, foo: 'bar'}])).not.toEqual([], 'unexpected field');
         });
     });
 
     describe('getTypeDeep', function () {
         var getTypeDeep = schemaUtils.getTypeDeep;
-        var schema = {
-            topics: [{
-                name: 'Example topic',
-                entries: [new Ref('entries')],
-            }],
-            entries: [{
-                text: 'Hello world',
-            }],
-        };
         it('returns types for refs in schema', function () {
             expect(getTypeDeep(schema, 'topics')).toEqual('collection');
             expect(getTypeDeep(schema, 'topics.123')).toEqual('object');
@@ -148,15 +201,6 @@ describe('schemaUtils', function () {
 
     describe('getRefFromStore', function () {
         var getRefFromStore = schemaUtils.getRefFromStore;
-        var schema = {
-            topics: [{
-                name: 'Example topic',
-                entries: [new Ref('entries')],
-            }],
-            entries: [{
-                text: 'Hello world',
-            }],
-        };
         var store = {
             topics: {
                 '123': {
@@ -179,18 +223,6 @@ describe('schemaUtils', function () {
 
     describe('filterRefs', function () {
         var filterRefs = schemaUtils.filterRefs;
-        var schema = {
-            topics: [{
-                name: 'Example topic',
-                entries: [new Ref('entries')],
-                stats: {
-                    viewCount: 23,
-                },
-            }],
-            entries: [{
-                text: 'Hello world',
-            }],
-        };
         it('fetches objects for primitives', function () {
             expect(filterRefs(schema, ['topics.123.name'])).toEqual(['topics.123']);
         });

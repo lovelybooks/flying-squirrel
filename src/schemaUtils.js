@@ -43,8 +43,11 @@ var schemaUtils = {
                     'reference': 'integer',
                 }[type]),
             };
-
-            if (type === 'collection') {
+            if (type === 'object') {
+                newResourceInfo.primitives = _.filter(_.keys(subSchema), function(fieldName) {
+                    return schemaUtils.determineType(subSchema[fieldName]) === 'primitive';
+                });
+            } else if (type === 'collection') {
                 newResourceInfo.collectionOf = schemaUtils.determineType(subSchema[0]);
                 newResourceInfo.args.push('criteria (object)');
             } else if (type === 'reference') {
@@ -96,7 +99,6 @@ var schemaUtils = {
         });
     },
 
-    // TODO tests for this function
     checkResourceHandlers: function checkResourceHandlers(schema, resourceHandlers) {
         var problems = [];
         var resourcesInfo = schemaUtils.getResourcesInfo(schema);
@@ -124,12 +126,43 @@ var schemaUtils = {
     },
 
     // TODO tests for this function
-    checkResourceResult: function checkResourceResult(resourceName, handlerInfo, result) {
+    checkResourceResult: function checkResourceResult(resourceName, handlerInfo, args, result) {
         var subResult = result;
-        _.each(handlerInfo.inCollections, function () {
-            subResult = subResult[0];
-        });
+        var subArg = args;
+
         var problemMessage = null;
+        _.each(handlerInfo.inCollections, function () {
+            console.assert(_.isArray(subArg), 'Invalid args');
+            if (!_.isArray(subResult)) {
+                problemMessage = 'Expected sub-result to be an array of length ' + subArg.length + ', but got ' + JSON.stringify(subResult);
+                return false; // Stop iteration.
+            } else if (subResult.length !== subArg.length) {
+                problemMessage = 'Wrong item count in sub-result; expected ' + subArg.length + ', but got ' + subResult.length;
+                return false; // Stop iteration.
+            }
+
+            for (var i=0; i<subResult.length; i++) {
+                if (subResult[i] != null) {
+                    subResult = subResult[i];
+                    subArg = subArg[i];
+                    break;
+                }
+                if (i === subResult.length - 1) {
+                    console.warn('Got no result from ' + resourceName + ' for args: ' + args.join(', '));
+                    subArg = subArg[i];
+                    subResult = null;
+                    return false;
+                }
+            }
+        });
+        if (problemMessage) {
+            return [problemMessage];
+        }
+
+        if (subResult == null) {
+            return []; // No result is also a valid result.
+        }
+
         if (handlerInfo.type === 'reference' && !_.isNumber(subResult)) {
             problemMessage = 'reference (integer) expected';
         }
@@ -143,10 +176,33 @@ var schemaUtils = {
             problemMessage = schemaUtils.formatNestedType(_.map(handlerInfo.inCollections, _.constant('list')).concat(problemMessage));
             return [
                 'Wrong result type from resource handler ' + resourceName + ': ' + problemMessage +
-                ', got: ' + JSON.stringify(result, null, 4)
+                ', got: ' + JSON.stringify(result)
             ];
         }
-        return [];
+
+        var problems = [];
+        if (handlerInfo.type === 'object') {
+            if (subResult.id && subResult.id != subArg) { // jshint ignore:line
+                problems.push('object with id=' + subArg + ' expected');
+            }
+            _.each(_.keys(subResult), function (fieldName) {
+                if (fieldName !== 'id' && !_.contains(handlerInfo.primitives, fieldName)) {
+                    problems.push('Unexpected field ' + fieldName + ' in object ' +
+                        JSON.stringify(subResult));
+                }
+                if (_.isObject(subResult[fieldName])) {
+                    problems.push('Expected primitive value for ' + fieldName + ' in object ' +
+                        JSON.stringify(subResult));
+                }
+            });
+            _.each(handlerInfo.primitives, function (fieldName) {
+                if (fieldName !== 'id' && !_.has(subResult, fieldName)) {
+                    problems.push('Field ' + fieldName + ' not found in object ' +
+                        JSON.stringify(subResult));
+                }
+            });
+        }
+        return problems;
     },
 
     determineType: function determineType(schemaObj) {
@@ -206,7 +262,7 @@ var schemaUtils = {
                     subSchema.ref, subStore, _.slice(path, pathIndex+1)
                 ]).join('.');
                 return getRefFromStore(schema, store, newRef);
-            };
+            }
         }
         return subStore;
     },

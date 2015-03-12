@@ -32,7 +32,7 @@ Server.prototype.fetchResource = function fetchResource(resource, args) {
         console.assert(promiseOrResult);
         return promiseOrResult;
     }).then(function (result) {
-        _.each(schemaUtils.checkResourceResult(resource, handlerInfo, result), function(problem) {
+        _.each(schemaUtils.checkResourceResult(resource, handlerInfo, args, result), function(problem) {
             console.error('FlyingSquirrel: ' + problem);
         });
         return result;
