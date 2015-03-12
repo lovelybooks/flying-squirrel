@@ -123,7 +123,6 @@ var schemaUtils = {
         return problems;
     },
 
-    // TODO tests for this function
     checkResourceResult: function checkResourceResult(resourceName, handlerInfo, args, result) {
         var subResult = result;
 
@@ -134,10 +133,13 @@ var schemaUtils = {
             console.assert(_.isArray(subArg), 'Invalid args');
 
             if (!_.isArray(subResult)) {
-                problemMessage = 'Expected sub-result to be an array of length ' + subArg.length + ', but got ' + JSON.stringify(subResult);
+                problemMessage = ('Expected sub-result to be an array of length ' + subArg.length +
+                        ', but got ' + JSON.stringify(subResult));
                 return false; // Stop iteration.
             } else if (subResult.length !== subArg.length) {
-                problemMessage = 'Wrong item count in sub-result; expected ' + subArg.length + ', but got ' + subResult.length;
+                problemMessage = ('Wrong item count in sub-result; expected ' + subArg.length +
+                        ', but got ' + subResult.length + ' (Hint: if the requested key is ' +
+                        'invalid, the handler should return null in this place)');
                 return false; // Stop iteration.
             }
 
@@ -148,7 +150,8 @@ var schemaUtils = {
                     break;
                 }
                 if (i === subResult.length - 1) {
-                    console.warn('Got no result from ' + resourceName + ' for args: ' + args.join(', '));
+                    console.warn('Got no result from ' + resourceName + ' for args: ' +
+                            args.join(', ') + ' (received: ' + JSON.stringify(result) + ')');
                     subResult = null;
                     return false;
                 }
@@ -181,7 +184,7 @@ var schemaUtils = {
         var problems = [];
         if (handlerInfo.type === 'object') {
             if (!expectedSubResultId || subResult.id && subResult.id != expectedSubResultId) { // jshint ignore:line
-                problems.push('object with id=' + expectedSubResultId + ' expected');
+                problems.push('object with id=' + expectedSubResultId + ' expected, got ' + subResult.id);
             }
             _.each(_.keys(subResult), function (fieldName) {
                 if (fieldName !== 'id' && !_.contains(handlerInfo.primitives, fieldName)) {
