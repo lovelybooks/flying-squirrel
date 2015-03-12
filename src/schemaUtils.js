@@ -85,8 +85,6 @@ var schemaUtils = {
 
         traverse(schema, [], []);
 
-        // console.log(JSON.stringify(resourcesInfo, null, 4));
-
         return resourcesInfo;
     },
 
@@ -173,11 +171,9 @@ var schemaUtils = {
             problemMessage = 'list (array) expected';
         }
         if (problemMessage) {
-            problemMessage = schemaUtils.formatNestedType(_.map(handlerInfo.inCollections, _.constant('list')).concat(problemMessage));
-            return [
-                'Wrong result type from resource handler ' + resourceName + ': ' + problemMessage +
-                ', got: ' + JSON.stringify(result)
-            ];
+            var nestedType = _.map(handlerInfo.inCollections, _.constant('list')).concat(problemMessage);
+            return ['Wrong result type: ' + schemaUtils.formatNestedType(nestedType) +
+                    ', got: ' + JSON.stringify(result)];
         }
 
         var problems = [];
@@ -187,18 +183,15 @@ var schemaUtils = {
             }
             _.each(_.keys(subResult), function (fieldName) {
                 if (fieldName !== 'id' && !_.contains(handlerInfo.primitives, fieldName)) {
-                    problems.push('Unexpected field ' + fieldName + ' in object ' +
-                        JSON.stringify(subResult));
+                    problems.push('Unexpected field ' + fieldName);
                 }
                 if (_.isObject(subResult[fieldName])) {
-                    problems.push('Expected primitive value for ' + fieldName + ' in object ' +
-                        JSON.stringify(subResult));
+                    problems.push('Expected primitive value for ' + fieldName);
                 }
             });
             _.each(handlerInfo.primitives, function (fieldName) {
                 if (fieldName !== 'id' && !_.has(subResult, fieldName)) {
-                    problems.push('Field ' + fieldName + ' not found in object ' +
-                        JSON.stringify(subResult));
+                    problems.push('Expected field ' + fieldName + ' not found');
                 }
             });
         }
