@@ -146,6 +146,37 @@ describe('schemaUtils', function () {
         });
     });
 
+    describe('getRefFromStore', function () {
+        var getRefFromStore = schemaUtils.getRefFromStore;
+        var schema = {
+            topics: [{
+                name: 'Example topic',
+                entries: [new Ref('entries')],
+            }],
+            entries: [{
+                text: 'Hello world',
+            }],
+        };
+        var store = {
+            topics: {
+                '123': {
+                    name: 'aaa',
+                    entries: {'0':12, '1':14},
+                },
+            },
+            entries: {
+                '12': {text: 'text text'},
+            }
+        };
+        it ('gets fields from store', function () {
+            expect(_.keys(getRefFromStore(schema, store, 'topics'))).toEqual(_.keys(store.topics));
+            expect(getRefFromStore(schema, store, 'topics.123.name')).toEqual(store.topics[123].name);
+            expect(getRefFromStore(schema, store, 'topics.123.entries.0.text')).toBe(store.entries[12].text);
+            // TODO: multiple ids support: topics.123,124,125
+            // TODO: star support: topics.123.entries.*
+        });
+    });
+
     describe('filterRefs', function () {
         var filterRefs = schemaUtils.filterRefs;
         var schema = {

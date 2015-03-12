@@ -188,6 +188,29 @@ var schemaUtils = {
         return schemaUtils.determineType(subSchema);
     },
 
+    getRefFromStore: function getRefFromStore(schema, store, ref) {
+        var path = ref.split('.');
+        var subSchema = schema;
+        var subStore = store;
+        for (var pathIndex = 0; pathIndex < path.length; pathIndex++) {
+            // Going one level down in the schema tree.
+            var key = path[pathIndex];
+            subSchema = schemaUtils.descendInSchema(schema, subSchema, key);
+            subStore = subStore[key]; // TODO support multiple refs and stars
+            if (subStore == null) {
+                return null;
+            }
+            if (schemaUtils.determineType(subSchema) === 'reference') {
+                console.assert(_.isNumber(subStore) || _.isString(subStore));
+                var newRef = _.flatten([
+                    subSchema.ref, subStore, _.slice(path, pathIndex+1)
+                ]).join('.');
+                return getRefFromStore(schema, store, newRef);
+            };
+        }
+        return subStore;
+    },
+
     filterRefs: function filterRefs(schema, refs) {
         console.assert(_.isArray(refs), 'filterRefs: ref array expected');
         var refsMap = {};
