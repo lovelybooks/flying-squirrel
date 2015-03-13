@@ -177,6 +177,8 @@ describe('schemaUtils', function () {
             expect(check([[456]], [null]))
                 .toEqual([], 'no result, but ok');
             // invalid examples
+            expect(check([[456]], [undefined]))
+                .toEqual([], 'null in results is ok, undefined isn\'t');
             expect(check([[123]], null))
                 .not.toEqual([], 'null');
             expect(check([[123]], 14))
@@ -202,13 +204,17 @@ describe('schemaUtils', function () {
             expect(check([[123]], [{id: 123, name: 'Hello', unicorns: 5, tags: []}]))
                 .toEqual([], 'id can be there or not');
             // invalid examples
-            expect(check([[123]], [{id: 456, name: 'Hello', unicorns: 5}]))
+            expect(check([[123]], [{id: 456, name: 'Hello', unicorns: 5, tags: []}]))
                 .not.toEqual([], 'mismatched id');
-            expect(check([[123]], [{name: 'Hello', unicorns: {}}]))
+            expect(check([[456]], [{name: undefined, unicorns: 0, tags: []}]))
+                .not.toEqual([], 'null in results is ok, undefined isn\'t');
+            expect(check([[456]], [{name: 'Hello', unicorns: 0, tags: undefined}]))
+                .not.toEqual([], 'null in results is ok, undefined isn\'t');
+            expect(check([[123]], [{name: 'Hello', unicorns: {}, tags: []}]))
                 .not.toEqual([], 'object instead of primitive');
-            expect(check([[123]], [{name: 'Hello'}]))
+            expect(check([[123]], [{name: 'Hello', tags: []}]))
                 .not.toEqual([], 'missing field');
-            expect(check([[123]], [{name: 'Hello', unicorns: 0, foo: 'bar'}]))
+            expect(check([[123]], [{name: 'Hello', unicorns: 0, tags: [], foo: 'bar'}]))
                 .not.toEqual([], 'unexpected field');
         });
     });

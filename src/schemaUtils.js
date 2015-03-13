@@ -189,6 +189,8 @@ var schemaUtils = {
             _.each(_.keys(subResult), function (fieldName) {
                 if (fieldName !== 'id' && !_.contains(handlerInfo.primitives, fieldName)) {
                     problems.push('Unexpected field ' + fieldName);
+                } else if (_.isUndefined(subResult[fieldName])) {
+                    problems.push('Got undefined for ' + fieldName);
                 } else if (schemaUtils.determineType(subResult[fieldName]) !== 'primitive') {
                     problems.push('Expected primitive value for ' + fieldName);
                 }
