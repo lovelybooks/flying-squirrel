@@ -20,13 +20,13 @@ function Server (schema, resourceHandlers) {
     this.resourceHandlersInfo = resourceHandlersInfo;
 }
 Server.prototype.fetchResource = function fetchResource(resource, args) {
+    console.assert(_.isString(resource), 'Resource should be a string');
+    console.assert(_.isArray(args), 'Args should be an array');
     var handler = this.resourceHandlers[resource];
     var handlerInfo = this.resourceHandlersInfo[resource];
     return Promise.resolve().then(function () {
         console.assert(_.isFunction(handler), 'Handler for ' + resource + ' not found');
-        console.assert(handlerInfo);
-        console.assert(args.length === handlerInfo.inCollections.length);
-        console.assert(args.length === (resource.match(/\{\}/g) || []).length);
+        console.assert(handlerInfo, 'Invalid handler');
         console.log('Fetching from ' + resource + ' ' +
                 _.map(args, function(arg) { return JSON.stringify(arg); }).join(', '));
         var promiseOrResult = handler.apply(null, args);
