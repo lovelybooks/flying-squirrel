@@ -12,6 +12,7 @@ describe('schemaUtils', function () {
             unicorns: 10,
             entries: [new Ref('entries')],
             openingEntry: new Ref('entries'),
+            tags: ['tag'],
             stats: {
                 viewCount: 23,
             },
@@ -23,7 +24,7 @@ describe('schemaUtils', function () {
 
     describe('getResourcesInfo', function() {
         it('generates a list of resources for schema', function() {
-            expect(_.sortBy(_.keys(schemaUtils.getResourcesInfo(schema)))).toEqual([
+            var expectedResources = [
                 'entries',
                 'entries.{}',
                 'topics',
@@ -31,7 +32,14 @@ describe('schemaUtils', function () {
                 'topics.{}.entries',
                 'topics.{}.openingEntry',
                 'topics.{}.stats',
-            ]);
+            ];
+            var observedResources = _.keys(schemaUtils.getResourcesInfo(schema));
+            _.each(expectedResources, function (resource) {
+                expect(observedResources).toContain(resource);
+            });
+            _.each(observedResources, function (resource) {
+                expect(expectedResources).toContain(resource);
+            });
         });
         it('gives types of endpoints and of objects in collections', function() {
             var resourcesInfo = schemaUtils.getResourcesInfo(schema);
@@ -124,8 +132,7 @@ describe('schemaUtils', function () {
 
     describe('checkResourceResult', function () {
         var checkResourceResult = schemaUtils.checkResourceResult;
-        var exampleTopic = {id: 123, name: 'Hello!', unicorns: 5};
-        var exampleEntry = {id: 14, name: 'This is my post'};
+        var exampleTopic = {id: 123, name: 'Hello!', unicorns: 5, tags: ['omg']};
         var resourcesInfo;
         beforeEach(function () {
             resourcesInfo = schemaUtils.getResourcesInfo(schema);
@@ -135,48 +142,74 @@ describe('schemaUtils', function () {
             var endpoint = 'topics.{}';
             var check = checkResourceResult.bind(null, endpoint, resourcesInfo[endpoint]);
             // valid examples
-            expect(check([[123]], [exampleTopic])).toEqual([], '1 result - ok');
-            expect(check([[456]], [null])).toEqual([], 'no result, but ok');
-            expect(check([[123, 123]], [exampleTopic, exampleTopic])).toEqual([], '2 results - ok');
-            expect(check([[456, 123]], [null, exampleTopic])).toEqual([], '1st result failed, 2nd ok');
+            expect(check([[123]], [exampleTopic]))
+                .toEqual([], '1 result - ok');
+            expect(check([[456]], [null]))
+                .toEqual([], 'no result, but ok');
+            expect(check([[123, 123]], [exampleTopic, exampleTopic]))
+                .toEqual([], '2 results - ok');
+            expect(check([[456, 123]], [null, exampleTopic]))
+                .toEqual([], '1st result failed, 2nd ok');
             // invalid examples
-            expect(check([[123]], null)).not.toEqual([], 'null');
-            expect(check([[123]], exampleTopic)).not.toEqual([], 'not wrapped');
-            expect(check([[123]], [[exampleTopic]])).not.toEqual([], 'wrapped too much');
-            expect(check([[123]], [])).not.toEqual([], 'empty list');
+            expect(check([[123]], null))
+                .not.toEqual([], 'null');
+            expect(check([[123]], exampleTopic))
+                .not.toEqual([], 'not wrapped');
+            expect(check([[123]], [[exampleTopic]]))
+                .not.toEqual([], 'wrapped too much');
+            expect(check([[123]], []))
+                .not.toEqual([], 'empty list');
             expect(check([[123]], {'0': exampleTopic})).not.toEqual([], '{0: stuff}');
-            expect(check([[123, 456]], [exampleTopic])).not.toEqual([], 'too little');
-            expect(check([[123]], [exampleTopic, null])).not.toEqual([], 'too many');
-            expect(check([[456]], [exampleTopic])).not.toEqual([], 'mismatched id');
+            expect(check([[123, 456]], [exampleTopic]))
+                .not.toEqual([], 'too little');
+            expect(check([[123]], [exampleTopic, null]))
+                .not.toEqual([], 'too many');
+            expect(check([[456]], [exampleTopic]))
+                .not.toEqual([], 'mismatched id');
             expect(console.warn).toHaveBeenCalled();
         });
         it('should work for ref endpoints (topics.{}.openingEntry)', function () {
             var endpoint = 'topics.{}.openingEntry';
             var check = checkResourceResult.bind(null, endpoint, resourcesInfo[endpoint]);
             // valid examples
-            expect(check([[123]], [14])).toEqual([], '1 result - ok');
-            expect(check([[456]], [null])).toEqual([], 'no result, but ok');
+            expect(check([[123]], [14]))
+                .toEqual([], '1 result - ok');
+            expect(check([[456]], [null]))
+                .toEqual([], 'no result, but ok');
             // invalid examples
-            expect(check([[123]], null)).not.toEqual([], 'null');
-            expect(check([[123]], 14)).not.toEqual([], 'not wrapped');
-            expect(check([[123]], [[14]])).not.toEqual([], 'wrapped too much');
-            expect(check([[123]], [])).not.toEqual([], 'empty list');
-            expect(check([[123, 456]], [14])).not.toEqual([], 'too little');
-            expect(check([[123]], [14, null])).not.toEqual([], 'too many');
+            expect(check([[123]], null))
+                .not.toEqual([], 'null');
+            expect(check([[123]], 14))
+                .not.toEqual([], 'not wrapped');
+            expect(check([[123]], [[14]]))
+                .not.toEqual([], 'wrapped too much');
+            expect(check([[123]], []))
+                .not.toEqual([], 'empty list');
+            expect(check([[123, 456]], [14]))
+                .not.toEqual([], 'too little');
+            expect(check([[123]], [14, null]))
+                .not.toEqual([], 'too many');
             expect(console.warn).toHaveBeenCalled();
         });
         it('should check the schema for expected fields', function () {
             var endpoint = 'topics.{}';
             var check = checkResourceResult.bind(null, endpoint, resourcesInfo[endpoint]);
             // valid examples
-            expect(check([[123]], [{name: 'Hello', unicorns: 5}])).toEqual([], 'ok');
-            expect(check([[123]], [{name: 'Hello', unicorns: 0}])).toEqual([], 'falsy field value is ok');
-            expect(check([[123]], [{id: 123, name: 'Hello', unicorns: 5}])).toEqual([], 'id can be there or not');
+            expect(check([[123]], [{name: 'Hello', unicorns: 5, tags: []}]))
+                .toEqual([], 'ok');
+            expect(check([[123]], [{name: 'Hello', unicorns: 0, tags: null}]))
+                .toEqual([], 'falsy field value is ok');
+            expect(check([[123]], [{id: 123, name: 'Hello', unicorns: 5, tags: []}]))
+                .toEqual([], 'id can be there or not');
             // invalid examples
-            expect(check([[123]], [{id: 456, name: 'Hello', unicorns: 5}])).not.toEqual([], 'mismatched id');
-            expect(check([[123]], [{name: 'Hello', unicorns: {}}])).not.toEqual([], 'object instead of primitive');
-            expect(check([[123]], [{name: 'Hello'}])).not.toEqual([], 'missing field');
-            expect(check([[123]], [{name: 'Hello', unicorns: 0, foo: 'bar'}])).not.toEqual([], 'unexpected field');
+            expect(check([[123]], [{id: 456, name: 'Hello', unicorns: 5}]))
+                .not.toEqual([], 'mismatched id');
+            expect(check([[123]], [{name: 'Hello', unicorns: {}}]))
+                .not.toEqual([], 'object instead of primitive');
+            expect(check([[123]], [{name: 'Hello'}]))
+                .not.toEqual([], 'missing field');
+            expect(check([[123]], [{name: 'Hello', unicorns: 0, foo: 'bar'}]))
+                .not.toEqual([], 'unexpected field');
         });
     });
 
@@ -186,6 +219,7 @@ describe('schemaUtils', function () {
             expect(getTypeDeep(schema, 'topics')).toEqual('collection');
             expect(getTypeDeep(schema, 'topics.123')).toEqual('object');
             expect(getTypeDeep(schema, 'topics.123.entries')).toEqual('collection');
+            expect(getTypeDeep(schema, 'topics.123.tags')).toEqual('primitive'); // list of primitives!
             expect(getTypeDeep(schema, 'topics.123.entries.2')).toEqual('reference');
             expect(getTypeDeep(schema, 'topics.123.entries.2.text')).toEqual('primitive');
         });

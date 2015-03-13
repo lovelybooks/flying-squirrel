@@ -189,7 +189,7 @@ var schemaUtils = {
             _.each(_.keys(subResult), function (fieldName) {
                 if (fieldName !== 'id' && !_.contains(handlerInfo.primitives, fieldName)) {
                     problems.push('Unexpected field ' + fieldName);
-                } else if (_.isObject(subResult[fieldName])) {
+                } else if (schemaUtils.determineType(subResult[fieldName]) !== 'primitive') {
                     problems.push('Expected primitive value for ' + fieldName);
                 }
             });
@@ -204,10 +204,16 @@ var schemaUtils = {
 
     determineType: function determineType(schemaObj) {
         if (_.isArray(schemaObj)) {
+            if (!schemaObj[0] || determineType(schemaObj[0]) === 'primitive') {
+                return 'primitive';
+            }
             return 'collection';
         } else if (schemaObj instanceof Ref) {
             return 'reference';
         } else if (_.isObject(schemaObj)) {
+            if (schemaObj instanceof Date) {
+                return 'primitive';
+            }
             console.assert(_.isPlainObject(schemaObj));
             return 'object';
         } else {
