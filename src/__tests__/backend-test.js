@@ -154,6 +154,17 @@ describe('backend stuff', function () {
                 expect(_.sortBy(_.keys(store.users))).toEqual(['102', '104', '106']);
                 expect(store.users[106].name).toEqual('Batman');
             });
+            it('handles nulls nicely', function () {
+                fetchRef(schema, 'entries.12,14.author', getResourceSpy, store);
+                tick(1);
+                expectResouceRequest('entries.{}.author', [['12', '14']]);
+                respondWith([102, null]);
+                expectResouceRequest('users.{}', [['102']]);
+                respondWith([{id: 102, name: 'Superman'}]);
+                expect(store.entries[12].author).toEqual(102);
+                expect(store.entries[14].author).toBe(null);
+                expect(store.users[102].name).toEqual('Superman');
+            });
         });
     });
 });

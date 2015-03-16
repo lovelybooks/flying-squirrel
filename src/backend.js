@@ -83,7 +83,7 @@ function fetchRef(schema, ref, getResource, store) {
                     subStore[key] = referencedIds[i];
                 });
                 var newRef = _.flatten([
-                    subSchema.ref, referencedIds.join(','), _.slice(path, pathIndex+1)
+                    subSchema.ref, _.compact(referencedIds).join(','), _.slice(path, pathIndex+1)
                 ]).join('.');
                 console.log('Resolving ref: ' + ref + ' → ' + newRef);
                 return fetchRef(schema, newRef, getResource, store);
@@ -98,7 +98,7 @@ function fetchRef(schema, ref, getResource, store) {
                 console.assert(key.split(',').length === results.length, 'Invalid result count');
                 _.each(subStores, function(subStore) {
                     _.each(key.split(','), function (keyPart, i) {
-                        console.assert(!results[i].id || results[i].id == keyPart, // jshint ignore:line
+                        console.assert(!results[i] || !results[i].id || results[i].id == keyPart, // jshint ignore:line
                                 'invalid id: expected ' + keyPart + ', got ' + results[i].id);
                         subStore[keyPart] = results[i];
                     });
