@@ -83,6 +83,10 @@ describe('backend stuff', function () {
                     });
                 });
             });
+            function startTestingFetchRef(ref) {
+                fetchRef(schema, ref, getResourceSpy, store);
+                tick(1);
+            }
             function expectResouceRequest(resource, args) {
                 expect(getResourceSpy).toHaveBeenCalledWith(resource, args);
                 tick(1);
@@ -93,8 +97,7 @@ describe('backend stuff', function () {
             }
 
             it('works with deep references (topics.123.openingEntry.author)', function () {
-                fetchRef(schema, 'topics.123.openingEntry.author', getResourceSpy, store);
-                tick(1);
+                startTestingFetchRef('topics.123.openingEntry.author');
                 expectResouceRequest('topics.{}.openingEntry', [['123']]);
                 respondWith([1234]);
                 expectResouceRequest('entries.{}.author', [['1234']]);
@@ -106,8 +109,7 @@ describe('backend stuff', function () {
                 expect(store.users[777]).toEqual({name: 'James Bond'});
             });
             it('works with \'*\' for collections of refs (topics.123.entries.*)', function () {
-                fetchRef(schema, 'topics.123.entries.*', getResourceSpy, store);
-                tick(1);
+                startTestingFetchRef('topics.123.entries.*');
                 expectResouceRequest('topics.{}.entries', [['123']]);
                 respondWith([[12, 14, 16]]); // Returning list for each requested topic
                 expectResouceRequest('entries.{}', [['12', '14', '16']]);
@@ -122,7 +124,7 @@ describe('backend stuff', function () {
                 expect(store.entries[16].text).toEqual('baz');
             });
             it('works with \'*\' for collections of objects (entries.*)', function () {
-                fetchRef(schema, 'entries.*', getResourceSpy, store);
+                startTestingFetchRef('entries.*');
                 expectResouceRequest('entries', []);
                 respondWith([12, 14, 16]);
                 expectResouceRequest('entries.{}', [['12', '14', '16']]);
@@ -135,8 +137,7 @@ describe('backend stuff', function () {
                 expect(store.entries[16].text).toEqual('baz');
             });
             it('works with \'*\' for stuff inside collections (entries.*.author)', function () {
-                fetchRef(schema, 'entries.*.author', getResourceSpy, store);
-                tick(1);
+                startTestingFetchRef('entries.*.author');
                 expectResouceRequest('entries', []);
                 respondWith([12, 14, 16]);
                 expectResouceRequest('entries.{}.author', [['12', '14', '16']]);
@@ -155,8 +156,7 @@ describe('backend stuff', function () {
                 expect(store.users[106].name).toEqual('Batman');
             });
             it('handles null references nicely (meaning: no referenced object)', function () {
-                fetchRef(schema, 'entries.12,14.author', getResourceSpy, store);
-                tick(1);
+                startTestingFetchRef('entries.12,14.author');
                 expectResouceRequest('entries.{}.author', [['12', '14']]);
                 respondWith([102, null]);
                 expectResouceRequest('users.{}', [['102']]);
@@ -166,8 +166,7 @@ describe('backend stuff', function () {
                 expect(store.users[102].name).toEqual('Superman');
             });
             it('handles null objects nicely (meaning: object not found in collection)', function () {
-                fetchRef(schema, 'entries.12,14.author', getResourceSpy, store);
-                tick(1);
+                startTestingFetchRef('entries.12,14.author');
                 expectResouceRequest('entries.{}.author', [['12', '14']]);
                 respondWith([102, null]);
                 expectResouceRequest('users.{}', [['102']]);
@@ -177,8 +176,7 @@ describe('backend stuff', function () {
                 expect(store.users[102].name).toEqual('Superman');
             });
             it('handles empty collections nicely', function () {
-                fetchRef(schema, 'topics.123.entries.*.author', getResourceSpy, store);
-                tick(1);
+                startTestingFetchRef('topics.123.entries.*.author');
                 expectResouceRequest('topics.{}.entries', [['123']]);
                 getResourceSpy.calls.reset();
                 respondWith([[]]);
@@ -189,8 +187,7 @@ describe('backend stuff', function () {
                 expect(_.keys(store.entries).length).toBe(0);
             });
             it('doesn\'t ask twice for the same thing', function () {
-                fetchRef(schema, 'entries.12,14.author', getResourceSpy, store);
-                tick(1);
+                startTestingFetchRef('entries.12,14.author');
                 expectResouceRequest('entries.{}.author', [['12', '14']]);
                 respondWith([102, 102]);
                 expectResouceRequest('users.{}', [['102']]);
