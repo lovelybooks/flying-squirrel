@@ -154,7 +154,7 @@ describe('backend stuff', function () {
                 expect(_.sortBy(_.keys(store.users))).toEqual(['102', '104', '106']);
                 expect(store.users[106].name).toEqual('Batman');
             });
-            it('handles nulls nicely', function () {
+            it('handles null references nicely (meaning: no referenced object)', function () {
                 fetchRef(schema, 'entries.12,14.author', getResourceSpy, store);
                 tick(1);
                 expectResouceRequest('entries.{}.author', [['12', '14']]);
@@ -164,6 +164,29 @@ describe('backend stuff', function () {
                 expect(store.entries[12].author).toEqual(102);
                 expect(store.entries[14].author).toBe(null);
                 expect(store.users[102].name).toEqual('Superman');
+            });
+            it('handles null objects nicely (meaning: object not found in collection)', function () {
+                fetchRef(schema, 'entries.12,14.author', getResourceSpy, store);
+                tick(1);
+                expectResouceRequest('entries.{}.author', [['12', '14']]);
+                respondWith([102, null]);
+                expectResouceRequest('users.{}', [['102']]);
+                respondWith([{id: 102, name: 'Superman'}]);
+                expect(store.entries[12].author).toEqual(102);
+                expect(store.entries[14].author).toBe(null);
+                expect(store.users[102].name).toEqual('Superman');
+            });
+            it('handles empty collections nicely', function () {
+                fetchRef(schema, 'topics.123.entries.*.author', getResourceSpy, store);
+                tick(1);
+                expectResouceRequest('topics.{}.entries', [['123']]);
+                getResourceSpy.calls.reset();
+                respondWith([[]]);
+                tick(10);
+                expect(getResourceSpy).not.toHaveBeenCalled(); // We expect no more requests.
+                expect(store.topics[123].entries).toEqual({});
+                expect(_.keys(store.topics).length).toBe(1);
+                expect(_.keys(store.entries).length).toBe(0);
             });
         });
     });

@@ -43,7 +43,7 @@ function fetchRef(schema, ref, getResource, store) {
                 if (subSchemaType === 'reference') {
                     // We fetch all references from a collection
 
-                    console.assert(result.length === 1); // TODO: support collection.*.nested.*
+                    console.assert(result.length === 1, 'Nested collections not supported'); // TODO
                     referencedIds = result[0];
                     console.assert(referencedIds);
 
@@ -60,6 +60,11 @@ function fetchRef(schema, ref, getResource, store) {
                     referencedIds = result;
                     newCollectionRef = _.slice(path, 0, pathIndex).join('.');
                 }
+
+                if (referencedIds.length === 0) {
+                    return store; // The collection is empty - we end the recursion.
+                }
+                
                 var newRef = _.flatten([
                     newCollectionRef, referencedIds.join(','), _.slice(path, pathIndex+1)
                 ]).join('.');
@@ -82,8 +87,13 @@ function fetchRef(schema, ref, getResource, store) {
                 _.each(subStores, function(subStore, i) {
                     subStore[key] = referencedIds[i];
                 });
+                referencedIds = _.compact(referencedIds); // Stripping nulls.
+                if (referencedIds.length === 0) {
+                    // All our fetched references were nulls, so we don't follow te reference.
+                    return store; // Ending recursion.
+                }
                 var newRef = _.flatten([
-                    subSchema.ref, _.compact(referencedIds).join(','), _.slice(path, pathIndex+1)
+                    subSchema.ref, referencedIds.join(','), _.slice(path, pathIndex+1)
                 ]).join('.');
                 console.log('Resolving ref: ' + ref + ' → ' + newRef);
                 return fetchRef(schema, newRef, getResource, store);
