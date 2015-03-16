@@ -188,6 +188,13 @@ describe('backend stuff', function () {
                 expect(_.keys(store.topics).length).toBe(1);
                 expect(_.keys(store.entries).length).toBe(0);
             });
+            it('doesn\'t ask twice for the same thing', function () {
+                fetchRef(schema, 'entries.12,14.author', getResourceSpy, store);
+                tick(1);
+                expectResouceRequest('entries.{}.author', [['12', '14']]);
+                respondWith([102, 102]);
+                expectResouceRequest('users.{}', [['102']]);
+            });
         });
     });
 });

@@ -64,7 +64,7 @@ function fetchRef(schema, ref, getResource, store) {
                 if (referencedIds.length === 0) {
                     return store; // The collection is empty - we end the recursion.
                 }
-                
+
                 var newRef = _.flatten([
                     newCollectionRef, referencedIds.join(','), _.slice(path, pathIndex+1)
                 ]).join('.');
@@ -87,7 +87,7 @@ function fetchRef(schema, ref, getResource, store) {
                 _.each(subStores, function(subStore, i) {
                     subStore[key] = referencedIds[i];
                 });
-                referencedIds = _.compact(referencedIds); // Stripping nulls.
+                referencedIds = _.compact(_.unique(referencedIds)); // Stripping nulls and dupes.
                 if (referencedIds.length === 0) {
                     // All our fetched references were nulls, so we don't follow te reference.
                     return store; // Ending recursion.
