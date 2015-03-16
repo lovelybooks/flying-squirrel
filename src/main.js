@@ -49,6 +49,7 @@ Server.prototype.fetch = function fetch(ref) {
     });
 };
 
+
 function Client (schema, fetchRefsCallback) {
     this.schema = schema;
     this.fetchRefsCallback = fetchRefsCallback;

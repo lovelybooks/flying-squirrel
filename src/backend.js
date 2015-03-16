@@ -8,7 +8,6 @@ function fetchRef(schema, ref, getResource, store) {
 
     console.assert(_.isObject(store));
     console.assert(_.isFunction(getResource));
-    console.assert(schemaUtils.getTypeDeep(schema, ref) !== 'primitive');
 
     var path = ref.split('.');
     var callbackArgs = [];
@@ -17,6 +16,13 @@ function fetchRef(schema, ref, getResource, store) {
     var subSchemaType = null;
     var prevSubSchemaType = null;
     var subStores = [store];
+
+    if (schemaUtils.getTypeDeep(schema, ref) === 'collection') {
+        throw 'This ref is a collection. Did you mean "' + ref + '.*" ?';
+    }
+    if (schemaUtils.getTypeDeep(schema, ref) === 'primitive') {
+        throw 'This ref is a primitive. Did you mean "' + _.dropRight(path).join('.') + '" ?';
+    }
 
     function getResourceForCurrentPath() {
         return getResource(resourcePath.join('.'), callbackArgs);
