@@ -94,6 +94,9 @@ function createInterceptor(schema, store, newRefCallback) {
 
         var type = determineType(valueFromSchema);
         if (type === 'reference') {
+            if (valueFromStore === null) {
+                return null;
+            }
             return createSubInterceptorForReference(valueFromSchema, valueFromStore, path);
         } else if (type === 'collection') {
             return createSubInterceptorForCollection(valueFromSchema, valueFromStore, path);

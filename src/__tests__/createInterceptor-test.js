@@ -80,6 +80,7 @@ describe('createInterceptor', function () {
             entries: {
                 '12': {
                     text: 'uuuu uuuu uuuuu uuuu uuuuuuuu uuuuuu uuu uuu!',
+                    author: null,
                 },
                 '15': {
                     text: 'Sample entry from store',
@@ -104,6 +105,7 @@ describe('createInterceptor', function () {
 
         it('should handle stored data correctly', function () {
             expect(interceptor.topics.get(123).name).toEqual('Example topic from Store');
+            expect(interceptor.entries.get(12).author).toBe(null);
             expect(pathSpy).not.toHaveBeenCalled();
         });
 
