@@ -5,33 +5,34 @@ require('es6-promise').polyfill();
 var _ = require('lodash');
 
 var Ref = require('./Ref');
+var determineType = require('./schemaUtils').determineType;
 
 // A constructor for our objects (this name will show up in the debugger)
 function Interceptor() {}
 
-function createInterceptor(schemaObj, storeObj, newRefCallback) {
-    console.assert(_.isObject(schemaObj));
-    console.assert(_.isObject(storeObj));
+function createInterceptor(schema, store, newRefCallback) {
+    console.assert(_.isObject(schema));
+    console.assert(_.isObject(store));
     console.assert(_.isFunction(newRefCallback));
 
-    function createSubInterceptorForReference(schemaSubObj, storeSubObj, path) {
-        console.assert(schemaSubObj instanceof Ref);
-        console.assert(!storeSubObj || _.isNumber(storeSubObj) || _.isString(storeSubObj));
+    function createSubInterceptorForReference(subSchema, subStore, path) {
+        console.assert(subSchema instanceof Ref);
+        console.assert(!subStore || _.isNumber(subStore) || _.isString(subStore));
         return returnValueForGetter(
-            schemaSubObj.get(schemaObj)[0], // UGLY
+            subSchema.get(schema)[0], // UGLY
             // TODO: write test for traversing to entries.123 when store.entries is undefined
-            storeSubObj ? (schemaSubObj.get(storeObj) || {})[storeSubObj] : undefined,
+            subStore ? (subSchema.get(store) || {})[subStore] : undefined,
             path
         );
     }
 
-    function createSubInterceptorForCollection(schemaSubObj, storeSubObj, path) {
-        console.assert(_.isArray(schemaSubObj));
-        console.assert(schemaSubObj.length === 1);
+    function createSubInterceptorForCollection(subSchema, subStore, path) {
+        console.assert(_.isArray(subSchema));
+        console.assert(subSchema.length === 1);
         return {
             keys: function () {
-                if (_.isObject(storeSubObj)) {
-                    return _.keys(storeSubObj); // TODO: does it work as expected for arrays too?
+                if (_.isObject(subStore)) {
+                    return _.keys(subStore); // Note this works for both objects and arrays.
                 } else {
                     // NOTE: we don't call the newRefCallback. It will be called when this item
                     // will be accessed.
@@ -43,30 +44,40 @@ function createInterceptor(schemaObj, storeObj, newRefCallback) {
             },
             get: function(id) {
                 return returnValueForGetter(
-                    schemaSubObj[0],
-                    _.isObject(storeSubObj) ? storeSubObj[id] : undefined,
+                    subSchema[0],
+                    _.isObject(subStore) ? subStore[id] : undefined,
                     path + '.' + id
                 );
+            },
+            toJSON: function() {
+                var keys = this.keys();
+                return JSON.stringify(_.zipObject(keys, _.map(keys, this.get.bind(this))));
             },
         };
     }
 
-    function createSubInterceptorForObject(schemaSubObj, storeSubObj, path) {
+    function createSubInterceptorForObject(subSchema, subStore, path) {
         if (path) {
             path += '.';
         } else {
             path = ''; // Special case for the root path.
         }
         var subInterceptor = new Interceptor();
-        _.each(_.keys(schemaSubObj), function (fieldName) {
+        _.each(_.keys(subSchema), function (fieldName) {
+
+            // Putting primitives directly to object. This way JSON.stringify may work.
+            if (_.has(subStore, fieldName) && determineType(subSchema[fieldName]) === 'primitive') {
+                subInterceptor[fieldName] = subStore[fieldName];
+                return;
+            }
 
             // For each field in subInterceptor, we define a getter that calls the newRefCallback
             // whenever we need to use data from schema (i.e. we don't have the data in the store).
             Object.defineProperty(subInterceptor, fieldName, {
                 get: function () {
                     return returnValueForGetter(
-                        schemaSubObj[fieldName],
-                        storeSubObj && storeSubObj[fieldName],
+                        subSchema[fieldName],
+                        subStore && subStore[fieldName],
                         path + fieldName
                     );
                 },
@@ -81,19 +92,19 @@ function createInterceptor(schemaObj, storeObj, newRefCallback) {
             newRefCallback(path, valueFromSchema);
         }
 
-        // TODO: refactor this to use schemaUtils.determineType()
-        if (valueFromSchema instanceof Ref) {
+        var type = determineType(valueFromSchema);
+        if (type === 'reference') {
             return createSubInterceptorForReference(valueFromSchema, valueFromStore, path);
-        } else if (_.isArray(valueFromSchema)) {
+        } else if (type === 'collection') {
             return createSubInterceptorForCollection(valueFromSchema, valueFromStore, path);
-        } else if (_.isObject(valueFromSchema)) {
+        } else if (type === 'object') {
             return createSubInterceptorForObject(valueFromSchema, valueFromStore, path);
         } else {
             return valueFromStore || valueFromSchema; // primitive value
         }
     }
 
-    return createSubInterceptorForObject(schemaObj, storeObj, null);
+    return createSubInterceptorForObject(schema, store, null);
 }
 
 module.exports = createInterceptor;
