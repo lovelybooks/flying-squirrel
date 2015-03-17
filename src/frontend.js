@@ -71,7 +71,9 @@ var frontend = {
                 }
             }
 
-            return iterate();
+            // NOTE: the call to iterate is wrapped in a promise so that exceptions are not thrown
+            // but the promise is rejected instead.
+            return Promise.resolve().then(iterate);
         }
 
         return {

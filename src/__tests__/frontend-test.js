@@ -17,7 +17,7 @@ var frontend = require('../frontend');
 
 describe('frontend stuff', function () {
 
-    describe('generateApiProxy', function() {
+    describe('generateApiProxy.IO()', function() {
         var generateApiProxy = frontend.generateApiProxy;
 
         var schema = {
@@ -62,7 +62,7 @@ describe('frontend stuff', function () {
             API.IO(function (data) {
                 return data.topics.get(123);
             });
-            jasmine.clock().tick(5);
+            jasmine.clock().tick(1);
             expect(dataSource.get).toHaveBeenCalled();
             // TODO expect promise to be resolved
         });
@@ -95,5 +95,48 @@ describe('frontend stuff', function () {
             ]);
             expect(dataSource.get.calls.count()).toBe(1);
         });
+
+        it('should fail if the callback throws', function () {
+            spyOn(console, 'log');
+            dataSource.get.and.returnValue(Promise.resolve({topics:{'123':{title: 'OMG'}}}));
+            var done = false;
+            API.IO(function (data) {
+                data.topics.get(123);
+                throw 'omg';
+            }).catch(function (err) {
+                expect(err).toEqual('omg');
+                done = true;
+            });
+            jasmine.clock().tick(1);
+            expect(dataSource.get.calls.count()).toBe(1);
+            expect(done).toBe(true);
+        });
+
+        it('should fail if the callback throws without accessing data', function () {
+            spyOn(console, 'log');
+            var done = false;
+            API.IO(function (data) { // jshint ignore:line
+                throw 'omg';
+            }).catch(function (err) {
+                expect(err).toEqual('omg');
+                done = true;
+            });
+            jasmine.clock().tick(1);
+            expect(done).toBe(true);
+        });
+
+        it('should return whatever the callback returned', function () {
+            spyOn(console, 'log');
+            var done = false;
+            API.IO(function (data) { // jshint ignore:line
+                return 'unicorn';
+            }).then(function (value) {
+                expect(value).toEqual('unicorn');
+                done = true;
+            });
+            jasmine.clock().tick(1);
+            expect(done).toBe(true);
+        });
+
     });
 });
