@@ -84,7 +84,7 @@ describe('FlyingSquirrel integration test (for main.js)', function () {
             expect(store.users[1337]).toEqual({id:1337, name:'James Bond'});
             done();
         }).catch(function(err) {
-            expect(false).toBe(true, err);
+            fail(err);
             done();
         });
     });

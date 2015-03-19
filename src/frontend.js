@@ -8,37 +8,41 @@ var createInterceptor = require('./createInterceptor');
 var schemaUtils = require('./schemaUtils');
 
 function PromiseBatcher(batchCallback) {
+    console.assert(_.isFunction(batchCallback));
     this.batchCallback = batchCallback;
     this.requested = [];
     this.requestTimeout = null;
-}
-PromiseBatcher.prototype.get = function(arg) {
-    return new Promise(function (resolve, reject) {
-        this.requested.push({arg: arg, resolve: resolve, reject: reject});
-        if (!this.requestTimeout) {
-            this.requestTimeout = setTimeout(this.fetchRequested.bind(this), 0);
-        }
-    }.bind(this));
-};
-PromiseBatcher.prototype.fetchRequested = function() {
-    this.requestTimeout = null;
-    var acceptedRequests = this.requested;
-    this.requested = [];
 
-    var args = _.map(acceptedRequests, 'arg');
-    console.assert(_.isArray(args));
-    return this.batchCallback(args).then(function(response) {
-        // resolving promises that could be resolved
-        _.each(acceptedRequests, function(promiseCallbacks) {
-            promiseCallbacks.resolve(response);
+    this.get = function(arg) {
+        return new Promise(function (resolve, reject) {
+            this.requested.push({arg: arg, resolve: resolve, reject: reject});
+            if (!this.requestTimeout) {
+                this.requestTimeout = setTimeout(this.fetchRequested.bind(this), 0);
+            }
+        }.bind(this));
+    }.bind(this);
+
+    this.fetchRequested = function() {
+        this.requestTimeout = null;
+        var acceptedRequests = this.requested;
+        this.requested = [];
+
+        var args = _.map(acceptedRequests, 'arg');
+        console.assert(_.isArray(args));
+        return this.batchCallback(args).then(function(response) {
+            // resolving promises that could be resolved
+            _.each(acceptedRequests, function(promiseCallbacks) {
+                promiseCallbacks.resolve(response);
+            });
+        }).catch(function (err) {
+            console.error('PromiseBatcher: ' + args + ' --> ERROR: ', err);
+            _.each(acceptedRequests, function(promiseCallbacks) {
+                promiseCallbacks.reject(err);
+            });
         });
-    }).catch(function (err) {
-        console.error('PromiseBatcher: ' + args + ' --> ERROR: ', err);
-        _.each(acceptedRequests, function(promiseCallbacks) {
-            promiseCallbacks.reject(err);
-        });
-    });
-};
+    }.bind(this);
+}
+
 
 var frontend = {
 

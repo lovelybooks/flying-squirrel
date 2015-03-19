@@ -129,6 +129,7 @@ describe('frontend stuff', function () {
         });
 
         it('should fail if the callback throws', function (done) {
+            spyOn(console, 'log');
             dataSourceCallback.and.returnValue(Promise.resolve({topics:{'123':{name: 'OMG'}}}));
             var ioCallbackCalls = 0;
             IO(function (data) {

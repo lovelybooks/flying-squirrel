@@ -3,8 +3,10 @@
 
 // Mocking console.assert for tests
 console.assert = function(condition, message) {
-    message = message || 'Assertion failed';
-    expect(condition).toBeTruthy(message);
+    if (!condition) {
+        message = message || 'Assertion failed';
+        jasmine.getEnv().fail(message);
+    }
 };
 
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 100; // miliseconds
