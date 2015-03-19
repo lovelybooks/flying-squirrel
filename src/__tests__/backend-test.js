@@ -194,4 +194,13 @@ describe('backend stuff', function () {
             });
         });
     });
+
+    describe('batchArgs', function () {
+        var batchArgs = backendUtils.batchArgs;
+        var handlerInfo = {};
+        it('zzz', function () {
+            expect(batchArgs([['123']], handlerInfo)).toEqual([['123']]);
+            // TODO expect(batchArgs([['123'], ['123']], handlerInfo)).toEqual([['123']]);
+        });
+    });
 });

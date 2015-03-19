@@ -132,10 +132,19 @@ function fetchRef(schema, ref, getResource, store) {
 
 }
 
+function batchArgs(arrayOfArgArrays, handlerInfo) {
+    console.assert(_.isArray(arrayOfArgArrays[0]));
+    console.assert(_.isObject(handlerInfo));
+    // TODO
+    return arrayOfArgArrays;
+}
+
 var backendUtils = {
 
     // writes the data to store and returns a new ref (if we are not finished yet) or null
     fetchRef: fetchRef,
+
+    batchArgs: batchArgs,
 };
 
 module.exports = backendUtils;

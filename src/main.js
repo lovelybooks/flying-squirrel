@@ -10,6 +10,9 @@ var schemaUtils = require('./schemaUtils');
 
 
 function Server (schema, resourceHandlers) {
+    console.assert(_.isObject(schema), 'schema should be an object');
+    console.assert(_.isObject(resourceHandlers), 'resourceHandlers should be an object');
+
     _.each(schemaUtils.checkResourceHandlers(schema, resourceHandlers), function(problem) {
         console.warn('FlyingSquirrel: ' + problem);
     });
@@ -18,36 +21,58 @@ function Server (schema, resourceHandlers) {
     this.schema = schema;
     this.resourceHandlers = resourceHandlers;
     this.resourceHandlersInfo = resourceHandlersInfo;
-}
-Server.prototype.fetchResource = function fetchResource(resource, args) {
-    console.assert(_.isString(resource), 'Resource should be a string');
-    console.assert(_.isArray(args), 'Args should be an array');
-    var handler = this.resourceHandlers[resource];
-    var handlerInfo = this.resourceHandlersInfo[resource];
-    return Promise.resolve().then(function () {
-        console.assert(_.isFunction(handler), 'Handler for ' + resource + ' not found');
-        console.assert(handlerInfo, 'Invalid handler');
-        console.log('Fetching from ' + resource + ' ' +
-                _.map(args, function(arg) { return JSON.stringify(arg); }).join(', '));
-        var promiseOrResult = handler.apply(null, args);
-        console.assert(promiseOrResult);
-        return promiseOrResult;
-    }).then(function (result) {
-        _.each(schemaUtils.checkResourceResult(resource, handlerInfo, args, result), function(problem) {
-            console.error('FlyingSquirrel: Problem with resource ' + resource + ': ' + problem);
-        });
-        return result;
-    });
-};
-Server.prototype.fetch = function fetch(ref) {
-    var fetchResource = this.fetchResource.bind(this);
-    var schema = this.schema;
+    this.resourceBatchers = {};
 
-    // We use Promise.resolve().then(...) so that exceptions from fetchRef will reject the Promise.
-    return Promise.resolve().then(function () {
-        return backendUtils.fetchRef(schema, ref, fetchResource, {});
-    });
-};
+    this.prepareBatcherForResource = function prepareBatcherForResource(resource) {
+        console.assert(_.isString(resource), 'Resource should be a string');
+
+        var handler = this.resourceHandlers[resource];
+        var handlerInfo = this.resourceHandlersInfo[resource];
+        console.assert(handlerInfo, 'Invalid handler ' + resource);
+        console.assert(_.isFunction(handler), 'Handler for ' + resource + ' not found');
+
+        var batchCallback = function (arrayOfArgArrays) {
+            arrayOfArgArrays = backendUtils.batchArgs(arrayOfArgArrays, handlerInfo);
+            return Promise.all(_.map(arrayOfArgArrays, function (args) {
+                console.log('Fetching from ' + resource, args);
+                return handler.apply(null, args);
+            }));
+        };
+        this.resourceBatchers[resource] = new frontendUtils.PromiseBatcher(batchCallback);
+    }.bind(this);
+
+    this.fetchResource = function fetchResource(resource, args) {
+        console.assert(_.isArray(args), 'Args should be an array');
+
+        if (!_.has(this.resourceBatchers, resource)) {
+            this.prepareBatcherForResource(resource);
+        }
+        var batcher = this.resourceBatchers[resource];
+        console.assert(_.isObject(batcher));
+
+        return batcher.get(args).then(function (batch) {
+            // TODO get my response from the batch
+            return batch[0]; // FIXME !!!!
+        }).then(function (result) {
+            var handlerInfo = this.resourceHandlersInfo[resource];
+            var problems = schemaUtils.checkResourceResult(resource, handlerInfo, args, result);
+            _.each(problems, function(problem) {
+                console.error('FlyingSquirrel: Problem with resource ' + resource + ': ' + problem);
+            });
+            return result;
+        }.bind(this));
+    }.bind(this);
+
+    this.fetch = function fetch(ref) {
+        var fetchResource = this.fetchResource.bind(this);
+        var schema = this.schema;
+
+        // We use Promise.resolve().then(...) so that exceptions from fetchRef will reject the Promise.
+        return Promise.resolve().then(function () {
+            return backendUtils.fetchRef(schema, ref, fetchResource, {});
+        });
+    }.bind(this);
+}
 
 
 function Client (schema, fetchRefsCallback) {
@@ -58,11 +83,12 @@ function Client (schema, fetchRefsCallback) {
         console.assert(_.isArray(arrayOfArraysOfRefs[0]));
         return fetchRefsCallback(schemaUtils.filterRefs(this.schema, _.flatten(arrayOfArraysOfRefs)));
     }.bind(this));
+
+    this.IO = function (callback) {
+        var IO = frontendUtils.generateApiProxy(this.schema, this.batcher.get.bind(this.batcher), this.store);
+        return IO(callback);
+    }.bind(this);
 }
-Client.prototype.IO = function (callback) {
-    var IO = frontendUtils.generateApiProxy(this.schema, this.batcher.get.bind(this.batcher), this.store);
-    return IO(callback);
-};
 
 var FlyingSquirrel = {
     Server: Server,
