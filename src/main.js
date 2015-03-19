@@ -57,10 +57,7 @@ function Client (schema, fetchRefsCallback) {
 }
 Client.prototype.IO = function (callback) {
     var IO = frontendUtils.generateApiProxy(this.schema, this.fetchRefsCallback, this.store);
-    return IO(callback).then(function (result) {
-        _.merge(this.store, result);
-        return this.store;
-    }.bind(this));
+    return IO(callback);
 };
 
 var FlyingSquirrel = {
