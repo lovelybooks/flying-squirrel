@@ -17,7 +17,42 @@ var frontend = require('../frontend');
 
 describe('frontend stuff', function () {
 
-    describe('generateApiProxy.IO()', function() {
+    describe('PromiseBatcher', function () {
+        var PromiseBatcher = frontend.PromiseBatcher;
+        var callbackSpy, batcher;
+
+        beforeEach(function () {
+            callbackSpy = jasmine.createSpy('callback');
+            // And this is the PromiseBatcher we're going to test!
+            batcher = new PromiseBatcher(callbackSpy);
+        });
+
+        it('should resolve the promise when it receives a response', function (done) {
+            callbackSpy.and.returnValue(Promise.resolve({hello: 'world'}));
+            batcher.get(123).then(function (response) {
+                expect(response).toEqual({hello: 'world'});
+                done();
+            }).catch(console.error);
+        });
+
+        it('should group requests and resolve each promise with the same result', function (done) {
+            callbackSpy.and.returnValue(Promise.resolve('some result'));
+            Promise.all([
+                batcher.get(1),
+                batcher.get(2),
+                batcher.get('aaa'),
+            ]).then(function (results) {
+                _.each(results, function (result) {
+                    expect(result).toEqual('some result');
+                });
+                expect(callbackSpy.calls.count()).toBe(1);
+                expect(callbackSpy).toHaveBeenCalledWith([1, 2, 'aaa']);
+                done();
+            }).catch(console.error);
+        });
+    });
+
+    describe('generateApiProxy, a.k.a. IO()', function() {
         var generateApiProxy = frontend.generateApiProxy;
 
         var schema = {

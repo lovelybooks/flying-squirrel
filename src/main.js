@@ -54,9 +54,13 @@ function Client (schema, fetchRefsCallback) {
     this.schema = schema;
     this.fetchRefsCallback = fetchRefsCallback;
     this.store = {};
+    this.batcher = new frontendUtils.PromiseBatcher(function (arrayOfArraysOfRefs) {
+        console.assert(_.isArray(arrayOfArraysOfRefs[0]));
+        return fetchRefsCallback(schemaUtils.filterRefs(this.schema, _.flatten(arrayOfArraysOfRefs)));
+    }.bind(this));
 }
 Client.prototype.IO = function (callback) {
-    var IO = frontendUtils.generateApiProxy(this.schema, this.fetchRefsCallback, this.store);
+    var IO = frontendUtils.generateApiProxy(this.schema, this.batcher.get.bind(this.batcher), this.store);
     return IO(callback);
 };
 

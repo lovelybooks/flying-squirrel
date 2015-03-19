@@ -7,7 +7,42 @@ var _ = require('lodash');
 var createInterceptor = require('./createInterceptor');
 var schemaUtils = require('./schemaUtils');
 
+function PromiseBatcher(batchCallback) {
+    this.batchCallback = batchCallback;
+    this.requested = [];
+    this.requestTimeout = null;
+}
+PromiseBatcher.prototype.get = function(arg) {
+    return new Promise(function (resolve, reject) {
+        this.requested.push({arg: arg, resolve: resolve, reject: reject});
+        if (!this.requestTimeout) {
+            this.requestTimeout = setTimeout(this.fetchRequested.bind(this), 0);
+        }
+    }.bind(this));
+};
+PromiseBatcher.prototype.fetchRequested = function() {
+    this.requestTimeout = null;
+    var acceptedRequests = this.requested;
+    this.requested = [];
+
+    var args = _.map(acceptedRequests, 'arg');
+    console.assert(_.isArray(args));
+    return this.batchCallback(args).then(function(response) {
+        // resolving promises that could be resolved
+        _.each(acceptedRequests, function(promiseCallbacks) {
+            promiseCallbacks.resolve(response);
+        });
+    }).catch(function (err) {
+        console.error('PromiseBatcher: ' + args + ' --> ERROR: ', err);
+        _.each(acceptedRequests, function(promiseCallbacks) {
+            promiseCallbacks.reject(err);
+        });
+    });
+};
+
 var frontend = {
+
+    PromiseBatcher: PromiseBatcher,
 
     generateApiProxy: function generateApiProxy(schema, dataSourceCallback, store) {
 
@@ -37,8 +72,7 @@ var frontend = {
                     _.each(filteredNewRefs, function(newRef) {
                         if (refsWeAlreadyFetched[newRef]) {
                             throw ('FlyingSquirrel internal error: ref ' + newRef +
-                                ' was fetched, but it looks like it isn\'t present in the store: ' +
-                                JSON.stringify(store, null, 4));
+                                ' was fetched, but it looks like it isn\'t present in the store');
                         }
                         refsWeAlreadyFetched[newRef] = true;
                     });
