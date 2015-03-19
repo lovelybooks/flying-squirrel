@@ -55,7 +55,7 @@ function Client (schema, fetchRefsCallback) {
     this.fetchRefsCallback = fetchRefsCallback;
 }
 Client.prototype.IO = function (callback) {
-    var API = frontendUtils.generateApiProxy(this.schema, {get: this.fetchRefsCallback});
+    var API = frontendUtils.generateApiProxy(this.schema, this.fetchRefsCallback);
     return Promise.resolve().then(function () {
         return API.IO(callback);
     });

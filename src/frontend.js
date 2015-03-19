@@ -9,7 +9,7 @@ var schemaUtils = require('./schemaUtils');
 
 var frontend = {
 
-    generateApiProxy: function generateApiProxy(schema, dataSource) {
+    generateApiProxy: function generateApiProxy(schema, dataSourceCallback) {
 
         var store = {};
 
@@ -45,14 +45,13 @@ var frontend = {
                     // console.log('Ah, the callback needs more data!', JSON.stringify(newRefs, null, 4));
                     // console.log('Filtered:', JSON.stringify(schemaUtils.filterRefs(schema, newRefs), null, 4));
                     if (callbackError) {
-                        console.log('by the way... ', callbackError);
+                        console.log('by the way... ', callbackError, callbackError.stack);
                     }
                     // we'll fetch the data and try again
-                    return dataSource.get(filteredNewRefs).then(function (newStoreData) {
-                        console.assert(_.isObject(newStoreData));
+                    return dataSourceCallback(filteredNewRefs).then(function (newStoreData) {
+                        console.assert(_.isObject(newStoreData), 'got non-object from data source');
 
                         // TODO: assert that the new store really contains the data we requested
-
 
                         _.merge(store, newStoreData);
                         return iterate();

@@ -42,32 +42,27 @@ describe('frontend stuff', function () {
                 }
             }],
         };
-        var dataSource, API;
+        var dataSourceCallback, API;
 
         beforeEach(function () {
-            dataSource = {
-                get: jasmine.createSpy('dataSource.get').and.returnValue(
-                    new Promise(function() { /* never resolved */ })
-                ),
-            };
-            API = generateApiProxy(schema, dataSource);
-            jasmine.clock().install();
+            dataSourceCallback =  jasmine.createSpy('dataSourceCallback').and.returnValue(
+                new Promise(function() { /* never resolved */ })
+            );
+            API = generateApiProxy(schema, dataSourceCallback);
         });
 
-        afterEach(function () {
-            jasmine.clock().uninstall();
-        });
-
-        it('should work with a simple callback', function () {
+        it('should work with a simple callback', function (done) {
             API.IO(function (data) {
                 return data.topics.get(123);
             });
-            jasmine.clock().tick(1);
-            expect(dataSource.get).toHaveBeenCalled();
-            // TODO expect promise to be resolved
+            setTimeout(function () {
+                expect(dataSourceCallback).toHaveBeenCalled();
+                // TODO expect promise to be resolved
+                done();
+            });
         });
 
-        it('should work with a complex callback', function () {
+        it('should work with a complex callback', function (done) {
             API.IO(function (data) {
                 var topic = data.topics.get(123);
                 var entryCount = topic.entries.getAll().length;
@@ -85,57 +80,50 @@ describe('frontend stuff', function () {
                     },
                 };
             });
-            jasmine.clock().tick(5);
-            expect(dataSource.get).toHaveBeenCalledWith([
-                'topics.123',
-                'topics.123.entries.*',
-                'topics.123.entries.0',
-                'topics.123.entries.0.author',
-                'topics.123.entries.0.author.avatar',
-            ]);
-            expect(dataSource.get.calls.count()).toBe(1);
+            setTimeout(function () {
+                expect(dataSourceCallback).toHaveBeenCalledWith([
+                    'topics.123',
+                    'topics.123.entries.*',
+                    'topics.123.entries.0',
+                    'topics.123.entries.0.author',
+                    'topics.123.entries.0.author.avatar',
+                ]);
+                expect(dataSourceCallback.calls.count()).toBe(1);
+                done();
+            }, 1);
         });
 
-        it('should fail if the callback throws', function () {
+        it('should fail if the callback throws', function (done) {
             spyOn(console, 'log');
-            dataSource.get.and.returnValue(Promise.resolve({topics:{'123':{title: 'OMG'}}}));
-            var done = false;
+            dataSourceCallback.and.returnValue(Promise.resolve({topics:{'123':{title: 'OMG'}}}));
             API.IO(function (data) {
                 data.topics.get(123);
                 throw 'omg';
             }).catch(function (err) {
                 expect(err).toEqual('omg');
-                done = true;
+                expect(dataSourceCallback.calls.count()).toBe(1);
+                done();
             });
-            jasmine.clock().tick(1);
-            expect(dataSource.get.calls.count()).toBe(1);
-            expect(done).toBe(true);
         });
 
-        it('should fail if the callback throws without accessing data', function () {
+        it('should fail if the callback throws without accessing data', function (done) {
             spyOn(console, 'log');
-            var done = false;
             API.IO(function (data) { // jshint ignore:line
                 throw 'omg';
             }).catch(function (err) {
                 expect(err).toEqual('omg');
-                done = true;
+                done();
             });
-            jasmine.clock().tick(1);
-            expect(done).toBe(true);
         });
 
-        it('should return whatever the callback returned', function () {
+        it('should return whatever the callback returned', function (done) {
             spyOn(console, 'log');
-            var done = false;
             API.IO(function (data) { // jshint ignore:line
                 return 'unicorn';
             }).then(function (value) {
                 expect(value).toEqual('unicorn');
-                done = true;
+                done();
             });
-            jasmine.clock().tick(1);
-            expect(done).toBe(true);
         });
 
     });
