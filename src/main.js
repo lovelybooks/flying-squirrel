@@ -53,12 +53,14 @@ Server.prototype.fetch = function fetch(ref) {
 function Client (schema, fetchRefsCallback) {
     this.schema = schema;
     this.fetchRefsCallback = fetchRefsCallback;
+    this.store = {};
 }
 Client.prototype.IO = function (callback) {
-    var API = frontendUtils.generateApiProxy(this.schema, this.fetchRefsCallback);
-    return Promise.resolve().then(function () {
-        return API.IO(callback);
-    });
+    var IO = frontendUtils.generateApiProxy(this.schema, this.fetchRefsCallback, this.store);
+    return IO(callback).then(function (result) {
+        _.merge(this.store, result);
+        return this.store;
+    }.bind(this));
 };
 
 var FlyingSquirrel = {

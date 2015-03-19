@@ -9,13 +9,15 @@ var schemaUtils = require('./schemaUtils');
 
 var frontend = {
 
-    generateApiProxy: function generateApiProxy(schema, dataSourceCallback) {
+    generateApiProxy: function generateApiProxy(schema, dataSourceCallback, store) {
 
-        var store = {};
+        console.assert(_.isObject(schema));
+        console.assert(_.isFunction(dataSourceCallback));
+        console.assert(_.isObject(store));
 
         var refsWeAlreadyFetched = {};
 
-        function IO(callback) {
+        return function IO(callback) {
 
             function iterate() {
                 var newRefs = [];
@@ -73,11 +75,6 @@ var frontend = {
             // NOTE: the call to iterate is wrapped in a promise so that exceptions are not thrown
             // but the promise is rejected instead.
             return Promise.resolve().then(iterate);
-        }
-
-        return {
-            IO: IO,
-            __store: store,
         };
     },
 };

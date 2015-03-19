@@ -42,17 +42,17 @@ describe('frontend stuff', function () {
                 }
             }],
         };
-        var dataSourceCallback, API;
+        var dataSourceCallback, IO;
 
         beforeEach(function () {
-            dataSourceCallback =  jasmine.createSpy('dataSourceCallback').and.returnValue(
+            dataSourceCallback = jasmine.createSpy('dataSourceCallback').and.returnValue(
                 new Promise(function() { /* never resolved */ })
             );
-            API = generateApiProxy(schema, dataSourceCallback);
+            IO = generateApiProxy(schema, dataSourceCallback, {});
         });
 
         it('should work with a simple callback', function (done) {
-            API.IO(function (data) {
+            IO(function (data) {
                 return data.topics.get(123);
             });
             setTimeout(function () {
@@ -63,7 +63,7 @@ describe('frontend stuff', function () {
         });
 
         it('should work with a complex callback', function (done) {
-            API.IO(function (data) {
+            IO(function (data) {
                 var topic = data.topics.get(123);
                 var entryCount = topic.entries.getAll().length;
                 var lastEntryAuthor = topic.entries.get(entryCount - 1).author;
@@ -94,13 +94,15 @@ describe('frontend stuff', function () {
         });
 
         it('should fail if the callback throws', function (done) {
-            spyOn(console, 'log');
-            dataSourceCallback.and.returnValue(Promise.resolve({topics:{'123':{title: 'OMG'}}}));
-            API.IO(function (data) {
+            dataSourceCallback.and.returnValue(Promise.resolve({topics:{'123':{name: 'OMG'}}}));
+            var ioCallbackCalls = 0;
+            IO(function (data) {
                 data.topics.get(123);
+                ioCallbackCalls++;
                 throw 'omg';
             }).catch(function (err) {
                 expect(err).toEqual('omg');
+                expect(ioCallbackCalls).toBe(2);
                 expect(dataSourceCallback.calls.count()).toBe(1);
                 done();
             });
@@ -108,7 +110,7 @@ describe('frontend stuff', function () {
 
         it('should fail if the callback throws without accessing data', function (done) {
             spyOn(console, 'log');
-            API.IO(function (data) { // jshint ignore:line
+            IO(function (data) { // jshint ignore:line
                 throw 'omg';
             }).catch(function (err) {
                 expect(err).toEqual('omg');
@@ -116,12 +118,45 @@ describe('frontend stuff', function () {
             });
         });
 
-        it('should return whatever the callback returned', function (done) {
-            spyOn(console, 'log');
-            API.IO(function (data) { // jshint ignore:line
+        it('should return whatever the callback returned (simple, static value)', function (done) {
+            IO(function (data) { // jshint ignore:line
                 return 'unicorn';
             }).then(function (value) {
                 expect(value).toEqual('unicorn');
+                done();
+            });
+        });
+
+        it('should return whatever the callback returned (value from backend)', function (done) {
+            dataSourceCallback.and.returnValue(Promise.resolve({topics:{'123':{name: 'OMG'}}}));
+            IO(function (data) { // jshint ignore:line
+                return data.topics.get(123);
+            }).then(function (topic) {
+                expect(topic.name).toEqual('OMG');
+                // expect(topic).toEqual({name: 'OMG'}); // TODO: for now, Interceptor is returned
+                done();
+            });
+        });
+
+        it('should read data from the store', function (done) {
+            var store = {users: {'7': {name: 'James Bond'}}};
+            IO = generateApiProxy(schema, dataSourceCallback, store);
+            IO(function (data) { // jshint ignore:line
+                return data.users.get(7).name;
+            }).then(function (value) {
+                expect(value).toEqual('James Bond');
+                done();
+            });
+        });
+
+        it('should write data to the store', function (done) {
+            var store = {};
+            IO = generateApiProxy(schema, dataSourceCallback, store);
+            dataSourceCallback.and.returnValue(Promise.resolve({topics:{'123':{name: 'OMG'}}}));
+            IO(function (data) { // jshint ignore:line
+                return data.topics.get(123);
+            }).then(function () {
+                expect(store.topics[123]).toEqual({name: 'OMG'});
                 done();
             });
         });
