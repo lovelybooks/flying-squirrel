@@ -37,7 +37,7 @@ describe('backend stuff', function () {
         var tick = jasmine.clock().tick;
         var getResourceSpy, store;
         beforeEach(function () {
-            getResourceSpy = jasmine.createSpy('getResource').and.returnValue(Promise.resolve());
+            getResourceSpy = jasmine.createSpy('getResource');
             jasmine.clock().install();
             store = {};
             spyOn(console, 'log'); // Disabling console output. TODO: make output configurable
@@ -48,6 +48,7 @@ describe('backend stuff', function () {
         });
 
         it('calls getResource to get data', function () {
+            getResourceSpy.and.returnValue(Promise.resolve([{}]));
             fetchRef(schema, 'entries.1234', getResourceSpy, store);
             expect(getResourceSpy).toHaveBeenCalledWith('entries.{}', [['1234']]);
         });
@@ -199,8 +200,7 @@ describe('backend stuff', function () {
         var batchArgs = backendUtils.batchArgs;
         var handlerInfo = {};
         it('zzz', function () {
-            expect(batchArgs([['123']], handlerInfo)).toEqual([['123']]);
-            // TODO expect(batchArgs([['123'], ['123']], handlerInfo)).toEqual([['123']]);
+            expect(batchArgs([['123']], handlerInfo).arrayOfArgArrays).toEqual([['123']]);
         });
     });
 });

@@ -25,7 +25,10 @@ function fetchRef(schema, ref, getResource, store) {
     }
 
     function getResourceForCurrentPath() {
-        return getResource(resourcePath.join('.'), callbackArgs);
+        return getResource(resourcePath.join('.'), callbackArgs).then(function (result) {
+            console.assert(result, 'Resource ' + resourcePath.join('.') + ' returned no data');
+            return result;
+        });
     }
 
     for (var pathIndex = 0; pathIndex < path.length; pathIndex++) {
@@ -135,8 +138,14 @@ function fetchRef(schema, ref, getResource, store) {
 function batchArgs(arrayOfArgArrays, handlerInfo) {
     console.assert(_.isArray(arrayOfArgArrays[0]));
     console.assert(_.isObject(handlerInfo));
-    // TODO
-    return arrayOfArgArrays;
+    var mapping = {};
+    _.each(arrayOfArgArrays, function (args, i) {
+        mapping[JSON.stringify(args)] = i;
+    });
+    return {
+        arrayOfArgArrays: arrayOfArgArrays,
+        mapping: mapping,
+    };
 }
 
 var backendUtils = {

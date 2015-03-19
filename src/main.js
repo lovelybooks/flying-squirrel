@@ -32,11 +32,16 @@ function Server (schema, resourceHandlers) {
         console.assert(_.isFunction(handler), 'Handler for ' + resource + ' not found');
 
         var batchCallback = function (arrayOfArgArrays) {
-            arrayOfArgArrays = backendUtils.batchArgs(arrayOfArgArrays, handlerInfo);
-            return Promise.all(_.map(arrayOfArgArrays, function (args) {
+            var batched = backendUtils.batchArgs(arrayOfArgArrays, handlerInfo);
+            return Promise.all(_.map(batched.arrayOfArgArrays, function (args) {
                 console.log('Fetching from ' + resource, args);
                 return handler.apply(null, args);
-            }));
+            })).then(function(handlerResult) {
+                return {
+                    handlerResult: handlerResult,
+                    batchMapping: batched.mapping,
+                };
+            });
         };
         this.resourceBatchers[resource] = new frontendUtils.PromiseBatcher(batchCallback);
     }.bind(this);
@@ -50,9 +55,10 @@ function Server (schema, resourceHandlers) {
         var batcher = this.resourceBatchers[resource];
         console.assert(_.isObject(batcher));
 
+        var argsKey = JSON.stringify(args);
         return batcher.get(args).then(function (batch) {
             // TODO get my response from the batch
-            return batch[0]; // FIXME !!!!
+            return batch.handlerResult[batch.batchMapping[argsKey]]; // FIXME !!!!
         }).then(function (result) {
             var handlerInfo = this.resourceHandlersInfo[resource];
             var problems = schemaUtils.checkResourceResult(resource, handlerInfo, args, result);
