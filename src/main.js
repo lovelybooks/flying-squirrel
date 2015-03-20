@@ -40,6 +40,15 @@ function Server (schema, resourceHandlers) {
                 console.log('calling ' + resource + ' with ' + JSON.stringify(args));
                 return handler.apply(null, args);
             })).then(function(handlerResult) {
+
+                _.each(arrayOfArgArrays, function(args, i) {
+                    var result = handlerResult[i];
+                    var problems = schemaUtils.checkResourceResult(resource, handlerInfo, args, result);
+                    _.each(problems, function(problem) {
+                        console.error('FlyingSquirrel: Problem with resource ' + resource + ': ' + problem);
+                    });
+                });
+
                 return {
                     handlerResult: handlerResult,
                     batchMapping: batched.mapping,
@@ -60,14 +69,14 @@ function Server (schema, resourceHandlers) {
 
         var argsKey = JSON.stringify(args);
         return batcher.get(args).then(function (batch) {
-            // TODO get my response from the batch
-            return batch.handlerResult[batch.batchMapping[argsKey]]; // FIXME !!!!
+            // Getting my response from the batch
+            return batch.handlerResult[batch.batchMapping[argsKey]];
         }).then(function (result) {
             var handlerInfo = this.resourceHandlersInfo[resource];
             var problems = schemaUtils.checkResourceResult(resource, handlerInfo, args, result);
-            _.each(problems, function(problem) {
-                console.error('FlyingSquirrel: Problem with resource ' + resource + ': ' + problem);
-            });
+            if (problems.length > 0) {
+                throw new Error('Problem with batch for ' + resource + ': ' + problems);
+            }
             return result;
         }.bind(this));
     }.bind(this);

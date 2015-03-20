@@ -138,7 +138,7 @@ var schemaUtils = {
                 return false; // Stop iteration.
             } else if (subResult.length !== subArg.length) {
                 problemMessage = ('Wrong item count in sub-result; expected ' + subArg.length +
-                        ', but got ' + subResult.length + ' (Hint: if the requested key is ' +
+                        ', but got ' + subResult.length + ' (Hint: if some requested key is ' +
                         'invalid, the handler should return null in this place)');
                 return false; // Stop iteration.
             }
