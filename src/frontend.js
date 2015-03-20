@@ -7,15 +7,18 @@ var _ = require('lodash');
 var createInterceptor = require('./createInterceptor');
 var schemaUtils = require('./schemaUtils');
 
-function PromiseBatcher(batchCallback) {
+// batchCallback: function(requests) -> Promise
+// postprocessCallback: function(request, batchResult) -> result
+function PromiseBatcher(batchCallback, postprocessCallback) {
     console.assert(_.isFunction(batchCallback));
+    console.assert(_.isFunction(postprocessCallback) || postprocessCallback == null);
     this.batchCallback = batchCallback;
     this.requested = [];
     this.requestTimeout = null;
 
-    this.get = function(arg) {
+    this.get = function(request) {
         return new Promise(function (resolve, reject) {
-            this.requested.push({arg: arg, resolve: resolve, reject: reject});
+            this.requested.push({request: request, resolve: resolve, reject: reject});
             if (!this.requestTimeout) {
                 this.requestTimeout = setTimeout(this.fetchRequested.bind(this), 0);
             }
@@ -27,15 +30,24 @@ function PromiseBatcher(batchCallback) {
         var acceptedRequests = this.requested;
         this.requested = [];
 
-        var args = _.map(acceptedRequests, 'arg');
-        console.assert(_.isArray(args));
-        return this.batchCallback(args).then(function(response) {
+        var requests = _.map(acceptedRequests, 'request');
+        console.assert(_.isArray(requests));
+        return this.batchCallback(requests).then(function(response) {
             // resolving promises that could be resolved
             _.each(acceptedRequests, function(promiseCallbacks) {
-                promiseCallbacks.resolve(response);
+                if (postprocessCallback) {
+                    try {
+                        var postprocessed = postprocessCallback(promiseCallbacks.request, response);
+                        promiseCallbacks.resolve(postprocessed);
+                    } catch(err) {
+                        promiseCallbacks.reject(err);
+                    }
+                } else {
+                    promiseCallbacks.resolve(response);
+                }
             });
         }).catch(function (err) {
-            console.error('PromiseBatcher: ' + args + ' --> ERROR: ', err);
+            console.error('PromiseBatcher: ' + requests + ' --> ERROR: ', err);
             _.each(acceptedRequests, function(promiseCallbacks) {
                 promiseCallbacks.reject(err);
             });
