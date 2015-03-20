@@ -35,6 +35,9 @@ function Server (schema, resourceHandlers) {
             var batched = backendUtils.batchArgs(arrayOfArgArrays, handlerInfo);
             return Promise.all(_.map(batched.arrayOfArgArrays, function (args) {
                 console.log('Fetching from ' + resource, args);
+                console.assert(args.length === handlerInfo.args.length,
+                            'Invalid arg count for ' + resource + ': ' + JSON.stringify(args));
+                console.log('calling ' + resource + ' with ' + JSON.stringify(args));
                 return handler.apply(null, args);
             })).then(function(handlerResult) {
                 return {

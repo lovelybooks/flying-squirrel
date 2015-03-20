@@ -141,12 +141,14 @@ function batchArgs(arrayOfArgArrays, handlerInfo) {
     var mapping = {};
     // TODO: make this more generic
     if (handlerInfo.inCollections.length === 1 && handlerInfo.args.length === 1) { // special, but common, case
-        var newArgs = _.unique(_.flatten(arrayOfArgArrays));
+        var firstArgsFromEachArray = _.map(arrayOfArgArrays, '0');
+        var allIds = _.unique(_.flatten(firstArgsFromEachArray));
+        console.assert(!_.isArray(allIds[0]));
+        var newArgs = [allIds];
         _.each(arrayOfArgArrays, function (args) {
-            // TODO: remove duplicated args
             mapping[JSON.stringify(args)] = 0;
         });
-        console.log(arrayOfArgArrays + '--->' + newArgs);
+        console.log('Batched: ' + JSON.stringify(arrayOfArgArrays) + ' ------> ' + JSON.stringify(newArgs));
         return {
             arrayOfArgArrays: [newArgs],
             mapping: mapping,

@@ -206,9 +206,10 @@ describe('backend stuff', function () {
             referenceTo: 'users',
         };
         it('zzz', function () {
-            expect(batchArgs([['123']], handlerInfo).arrayOfArgArrays).toEqual([['123']]);
-            expect(batchArgs([['123'], ['123']], handlerInfo).arrayOfArgArrays).toEqual([['123']]);
-            expect(batchArgs([['123'], ['456']], handlerInfo).arrayOfArgArrays).toEqual([['123', '456']]);
+            // NOTE: ['123'] is the argument for resource, so [[['123']]] is an arrayOfArgArrays
+            expect(batchArgs([[['123']]], handlerInfo).arrayOfArgArrays).toEqual([[['123']]]);
+            expect(batchArgs([[['123']], [['123']]], handlerInfo).arrayOfArgArrays).toEqual([[['123']]]);
+            expect(batchArgs([[['123']], [['456']]], handlerInfo).arrayOfArgArrays).toEqual([[['123', '456']]]);
         });
     });
 });
