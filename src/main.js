@@ -40,7 +40,7 @@ function Server (schema, resourceHandlers) {
             // Validating the result received from handler.
             var problems = schemaUtils.checkResourceResult(resource, handlerInfo, args, result);
             if (problems.length > 0) {
-                console.error('Problems with resource ' + resource + ':\n  ' + problems.join(',\n  '));
+                console.error('Problems with resource ' + resource + ': ' + problems.join(', '));
             }
             return result;
         });
@@ -62,17 +62,27 @@ function Server (schema, resourceHandlers) {
 
                 // Finally! calling the handler.
                 return that.fetchResourceDirectly(resource, args);
-            })).then(function(handlerResult) {
+            })).then(function(handlerResults) {
                 return {
-                    handlerResult: handlerResult,
-                    batchMapping: batched.mapping,
+                    handlerResults: handlerResults,
+                    getIndividualResult: batched.getIndividualResult,
                 };
             });
         };
 
         var postprocessCallback = function postprocessCallback(args, batch) {
-            var argsKey = JSON.stringify(args);
-            return batch.handlerResult[batch.batchMapping[argsKey]];
+            var result = batch.getIndividualResult(batch.handlerResults, args);
+
+            // result = _.map(args[0], function(id) {
+            //     var index = _.find(result, {id: id});
+            // });
+
+            var problems = schemaUtils.checkResourceResult(resource, handlerInfo, args, result);
+            if (problems.length > 0) {
+                console.error('Problems with batch for ' + resource + ': ' + problems.join(', '));
+            }
+
+            return result;
         };
 
         that.resourceBatchers[resource] = new Batcher(batchCallback, postprocessCallback);
@@ -87,14 +97,7 @@ function Server (schema, resourceHandlers) {
         var batcher = that.resourceBatchers[resource];
         console.assert(_.isObject(batcher));
 
-        return batcher.get(args).then(function (result) {
-            var handlerInfo = that.resourceHandlersInfo[resource];
-            var problems = schemaUtils.checkResourceResult(resource, handlerInfo, args, result);
-            if (problems.length > 0) {
-                console.error('Problem with batch for ' + resource + ':\n  ' + problems.join(',\n  '));
-            }
-            return result;
-        });
+        return batcher.get(args);
     };
 
     that.fetch = function fetch(ref) {

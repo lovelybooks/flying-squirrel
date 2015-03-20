@@ -197,18 +197,35 @@ describe('backend stuff', function () {
 
     describe('batchArgs', function () {
         var batchArgs = backendUtils.batchArgs;
-        var handlerInfo = {
-            type: 'reference',
-            inCollections: ['entries'],
-            args: ['entriesIds (a list of integers)'],
-            returnType: ['list', 'integer'],
-            referenceTo: 'users',
-        };
-        it('zzz', function () {
+
+        var handlerInfo;
+        beforeEach(function () {
+            handlerInfo = {
+                type: 'reference',
+                inCollections: ['entries'],
+                args: ['entriesIds (a list of integers)'],
+                returnType: ['list', 'integer'],
+                referenceTo: 'users',
+            };
+        });
+
+        it('should collapse the arguments', function () {
             // NOTE: ['123'] is the argument for resource, so [[['123']]] is an arrayOfArgArrays
-            expect(batchArgs([[['123']]], handlerInfo).arrayOfArgArrays).toEqual([[['123']]]);
+            expect(batchArgs([[['123']]           ], handlerInfo).arrayOfArgArrays).toEqual([[['123']]]);
             expect(batchArgs([[['123']], [['123']]], handlerInfo).arrayOfArgArrays).toEqual([[['123']]]);
             expect(batchArgs([[['123']], [['456']]], handlerInfo).arrayOfArgArrays).toEqual([[['123', '456']]]);
+        });
+        it('should handle the mapping back to individual results', function () {
+            var batched = batchArgs([[['123']], [['456']]], handlerInfo);
+            var batchResult = [[{foo: 'aaa'}, {foo: 'zzz'}]];
+            expect(batched.getIndividualResult(batchResult, [['123']])).toEqual([{foo: 'aaa'}]);
+            expect(batched.getIndividualResult(batchResult, [['456']])).toEqual([{foo: 'zzz'}]);
+        });
+        it('should handle the mapping back to individual results - path 2', function () {
+            handlerInfo.inCollections = [];
+            var batched = batchArgs([[['123']]], handlerInfo);
+            var batchResult = [[{foo: 'aaa'}]];
+            expect(batched.getIndividualResult(batchResult, [['123']])).toEqual([{foo: 'aaa'}]);
         });
     });
 });

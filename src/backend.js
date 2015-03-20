@@ -144,29 +144,35 @@ function fetchRef(schema, ref, getResource, store) {
 function batchArgs(arrayOfArgArrays, handlerInfo) {
     console.assert(_.isArray(arrayOfArgArrays[0]));
     console.assert(_.isObject(handlerInfo));
-    var mapping = {};
+
     // TODO: make this more generic
+
     if (handlerInfo.inCollections.length === 1 && handlerInfo.args.length === 1) { // special, but common, case
         var firstArgsFromEachArray = _.map(arrayOfArgArrays, '0');
         var allIds = _.unique(_.flatten(firstArgsFromEachArray));
-        console.assert(!_.isArray(allIds[0]));
+        console.assert(!_.isArray(allIds[0])); // It should be a list of ids.
         var newArgs = [allIds];
-        _.each(arrayOfArgArrays, function (args) {
-            mapping[JSON.stringify(args)] = 0;
-        });
         console.log('Batched: ' + JSON.stringify(arrayOfArgArrays) + ' ------> ' + JSON.stringify(newArgs));
         return {
             arrayOfArgArrays: [newArgs],
-            mapping: mapping,
+            getIndividualResult: function (result, args) {
+                console.assert(_.isArray(result) && result.length === 1);
+                return _.map(args[0], function (id) {
+                    var indexInResult = _.findKey(allIds, function (id2) { return id2 === id; });
+                    return result[0][indexInResult]; // We take it from the result of the first call
+                });
+            },
         };
     } else {
-        // TODO: remove duplicated args
-        _.each(arrayOfArgArrays, function (args, i) {
-            mapping[JSON.stringify(args)] = i; // TODO: something nontrivial
-        });
+        // Some other resource - we don't batch anything.
+        // TODO: we could remove duplicated arg sets
         return {
             arrayOfArgArrays: arrayOfArgArrays,
-            mapping: mapping,
+            getIndividualResult: function (result, args) {
+                console.assert(_.isArray(result) && result.length === arrayOfArgArrays.length);
+                // FIXME: find args in arrayOfArgArrays and return the result with that index
+                return result[0];
+            },
         };
     }
 }
