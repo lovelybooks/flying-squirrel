@@ -40,6 +40,7 @@ function fetchRef(schema, ref, getResource, store) {
 
         // Handling stars: 'collection.*' resolves to a new ref like 'collection.2,3,5'
         if (prevSubSchemaType === 'collection' && key === '*') {
+            callbackArgs.push({}); // The search criteria.
             return getResourceForCurrentPath().then(function(result) {
                 var referencedIds, newCollectionRef;
 

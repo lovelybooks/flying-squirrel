@@ -111,7 +111,7 @@ describe('backend stuff', function () {
             });
             it('works with \'*\' for collections of refs (topics.123.entries.*)', function () {
                 startTestingFetchRef('topics.123.entries.*');
-                expectResouceRequest('topics.{}.entries', [['123']]);
+                expectResouceRequest('topics.{}.entries', [['123'], {}]);
                 respondWith([[12, 14, 16]]); // Returning list for each requested topic
                 expectResouceRequest('entries.{}', [['12', '14', '16']]);
                 respondWith([
@@ -126,7 +126,7 @@ describe('backend stuff', function () {
             });
             it('works with \'*\' for collections of objects (entries.*)', function () {
                 startTestingFetchRef('entries.*');
-                expectResouceRequest('entries', []);
+                expectResouceRequest('entries', [{}]);
                 respondWith([12, 14, 16]);
                 expectResouceRequest('entries.{}', [['12', '14', '16']]);
                 respondWith([
@@ -139,7 +139,7 @@ describe('backend stuff', function () {
             });
             it('works with \'*\' for stuff inside collections (entries.*.author)', function () {
                 startTestingFetchRef('entries.*.author');
-                expectResouceRequest('entries', []);
+                expectResouceRequest('entries', [{}]);
                 respondWith([12, 14, 16]);
                 expectResouceRequest('entries.{}.author', [['12', '14', '16']]);
                 respondWith([102, 104, 106]);
@@ -178,7 +178,7 @@ describe('backend stuff', function () {
             });
             it('handles empty collections nicely', function () {
                 startTestingFetchRef('topics.123.entries.*.author');
-                expectResouceRequest('topics.{}.entries', [['123']]);
+                expectResouceRequest('topics.{}.entries', [['123'], {}]);
                 getResourceSpy.calls.reset();
                 respondWith([[]]);
                 tick(10);
