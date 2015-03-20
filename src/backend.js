@@ -170,8 +170,8 @@ function batchArgs(arrayOfArgArrays, handlerInfo) {
             arrayOfArgArrays: arrayOfArgArrays,
             getIndividualResult: function (result, args) {
                 console.assert(_.isArray(result) && result.length === arrayOfArgArrays.length);
-                // FIXME: find args in arrayOfArgArrays and return the result with that index
-                return result[0];
+                var indexInResult = _.findKey(arrayOfArgArrays, args);
+                return result[indexInResult];
             },
         };
     }
