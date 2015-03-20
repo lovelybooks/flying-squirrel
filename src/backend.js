@@ -4,6 +4,9 @@ var _ = require('lodash');
 
 var schemaUtils = require('./schemaUtils');
 
+// TODO: this code can be gratly simplified if we would end ust with the first resolved ref.
+// This way, store logic could be re-used to handle the reference raversal.
+
 function fetchRef(schema, ref, getResource, store) {
 
     console.assert(_.isObject(store));
@@ -25,10 +28,12 @@ function fetchRef(schema, ref, getResource, store) {
     }
 
     function getResourceForCurrentPath() {
-        return getResource(resourcePath.join('.'), callbackArgs).then(function (result) {
+        var promise = getResource(resourcePath.join('.'), callbackArgs).then(function (result) {
             console.assert(result, 'Resource ' + resourcePath.join('.') + ' returned no data');
             return result;
         });
+        console.assert(_.isFunction(promise.then), 'getResource didn\'t return a Promise');
+        return promise;
     }
 
     for (var pathIndex = 0; pathIndex < path.length; pathIndex++) {

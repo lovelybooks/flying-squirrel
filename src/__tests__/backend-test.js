@@ -34,7 +34,6 @@ describe('backend stuff', function () {
                 }
             }],
         };
-        var tick = jasmine.clock().tick;
         var getResourceSpy, store;
         beforeEach(function () {
             getResourceSpy = jasmine.createSpy('getResource');
@@ -43,7 +42,7 @@ describe('backend stuff', function () {
             spyOn(console, 'log'); // Disabling console output. TODO: make output configurable
         });
         afterEach(function () {
-            tick(1);
+            jasmine.clock().tick(1);
             jasmine.clock().uninstall();
         });
 
@@ -58,19 +57,19 @@ describe('backend stuff', function () {
             fetchRef(schema, 'entries.1234', getResourceSpy, store).then(function () {
                 done = true;
             });
-            tick(1);
+            jasmine.clock().tick(1);
             expect(done).toBe(true);
         });
         it('puts the data in store', function () {
             getResourceSpy.and.returnValue(Promise.resolve([{text: 'hello'}]));
             fetchRef(schema, 'entries.1234', getResourceSpy, store);
-            tick(1);
+            jasmine.clock().tick(1);
             expect(store.entries[1234]).toEqual({text: 'hello'});
         });
         it('works with references', function () {
             getResourceSpy.and.returnValue(Promise.resolve([777]));
             fetchRef(schema, 'entries.1234.author', getResourceSpy, store);
-            tick(1);
+            jasmine.clock().tick(1);
             expect(getResourceSpy).toHaveBeenCalledWith('entries.{}.author', [['1234']]);
             expect(getResourceSpy).toHaveBeenCalledWith('users.{}', [['777']]);
         });
@@ -86,15 +85,15 @@ describe('backend stuff', function () {
             });
             function startTestingFetchRef(ref) {
                 fetchRef(schema, ref, getResourceSpy, store);
-                tick(1);
+                jasmine.clock().tick(1);
             }
             function expectResouceRequest(resource, args) {
                 expect(getResourceSpy).toHaveBeenCalledWith(resource, args);
-                tick(1);
+                jasmine.clock().tick(1);
             }
             function respondWith(response) {
                 resolve(response);
-                tick(1);
+                jasmine.clock().tick(1);
             }
 
             it('works with deep references (topics.123.openingEntry.author)', function () {
@@ -181,7 +180,7 @@ describe('backend stuff', function () {
                 expectResouceRequest('topics.{}.entries', [['123'], {}]);
                 getResourceSpy.calls.reset();
                 respondWith([[]]);
-                tick(10);
+                jasmine.clock().tick(10);
                 expect(getResourceSpy).not.toHaveBeenCalled(); // We expect no more requests.
                 expect(store.topics[123].entries).toEqual({});
                 expect(_.keys(store.topics).length).toBe(1);
