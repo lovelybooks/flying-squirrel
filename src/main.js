@@ -39,9 +39,9 @@ function Server (schema, resourceHandlers) {
         }).then(function (result) {
             // Validating the result received from handler.
             var problems = schemaUtils.checkResourceResult(resource, handlerInfo, args, result);
-            _.each(problems, function(problem) {
-                console.error('FlyingSquirrel: Problem with resource ' + resource + ': ' + problem);
-            });
+            if (problems.length > 0) {
+                console.error('Problems with resource ' + resource + ':\n  ' + problems.join(',\n  '));
+            }
             return result;
         });
     };
@@ -88,12 +88,10 @@ function Server (schema, resourceHandlers) {
         console.assert(_.isObject(batcher));
 
         return batcher.get(args).then(function (result) {
-            // Validating the result received from batcher. These are thrown because they mean
-            // internal problems in FlyingSquirrel's batching code.
             var handlerInfo = that.resourceHandlersInfo[resource];
             var problems = schemaUtils.checkResourceResult(resource, handlerInfo, args, result);
             if (problems.length > 0) {
-                throw new Error('Problem with batch for ' + resource + ': ' + problems);
+                console.error('Problem with batch for ' + resource + ':\n  ' + problems.join(',\n  '));
             }
             return result;
         });
