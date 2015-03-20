@@ -139,13 +139,28 @@ function batchArgs(arrayOfArgArrays, handlerInfo) {
     console.assert(_.isArray(arrayOfArgArrays[0]));
     console.assert(_.isObject(handlerInfo));
     var mapping = {};
-    _.each(arrayOfArgArrays, function (args, i) {
-        mapping[JSON.stringify(args)] = i;
-    });
-    return {
-        arrayOfArgArrays: arrayOfArgArrays,
-        mapping: mapping,
-    };
+    // TODO: make this more generic
+    if (handlerInfo.inCollections.length === 1 && handlerInfo.args.length === 1) { // special, but common, case
+        var newArgs = _.unique(_.flatten(arrayOfArgArrays));
+        _.each(arrayOfArgArrays, function (args) {
+            // TODO: remove duplicated args
+            mapping[JSON.stringify(args)] = 0;
+        });
+        console.log(arrayOfArgArrays + '--->' + newArgs);
+        return {
+            arrayOfArgArrays: [newArgs],
+            mapping: mapping,
+        };
+    } else {
+        // TODO: remove duplicated args
+        _.each(arrayOfArgArrays, function (args, i) {
+            mapping[JSON.stringify(args)] = i; // TODO: something nontrivial
+        });
+        return {
+            arrayOfArgArrays: arrayOfArgArrays,
+            mapping: mapping,
+        };
+    }
 }
 
 var backendUtils = {

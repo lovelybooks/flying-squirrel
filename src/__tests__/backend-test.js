@@ -198,9 +198,17 @@ describe('backend stuff', function () {
 
     describe('batchArgs', function () {
         var batchArgs = backendUtils.batchArgs;
-        var handlerInfo = {};
+        var handlerInfo = {
+            type: 'reference',
+            inCollections: ['entries'],
+            args: ['entriesIds (a list of integers)'],
+            returnType: ['list', 'integer'],
+            referenceTo: 'users',
+        };
         it('zzz', function () {
             expect(batchArgs([['123']], handlerInfo).arrayOfArgArrays).toEqual([['123']]);
+            expect(batchArgs([['123'], ['123']], handlerInfo).arrayOfArgArrays).toEqual([['123']]);
+            expect(batchArgs([['123'], ['456']], handlerInfo).arrayOfArgArrays).toEqual([['123', '456']]);
         });
     });
 });
