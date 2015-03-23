@@ -39,7 +39,7 @@ describe('backend stuff', function () {
             getResourceSpy = jasmine.createSpy('getResource');
             jasmine.clock().install();
             store = {};
-            spyOn(console, 'log'); // Disabling console output. TODO: make output configurable
+            spyOn(console, 'debug'); // Disabling console output. TODO: make output configurable
         });
         afterEach(function () {
             jasmine.clock().tick(1);

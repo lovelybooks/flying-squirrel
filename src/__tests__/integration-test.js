@@ -44,6 +44,7 @@ describe('FlyingSquirrel integration test (for main.js)', function () {
 
 
         // Disabling console output for this test. (Comment it out if you're debugging this test.)
+        spyOn(console, 'debug');
         spyOn(console, 'log');
 
         // Creating the server objec: We expect a lot of warnings about missing handlers.

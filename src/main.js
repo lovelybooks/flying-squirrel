@@ -10,6 +10,8 @@ var schemaUtils = require('./schemaUtils');
 var Batcher = require('./Batcher');
 
 
+// TODO: move batching logic to backend.js or some other file, and unit-test it.
+
 function Server (schema, resourceHandlers) {
     console.assert(_.isObject(schema), 'schema should be an object');
     console.assert(_.isObject(resourceHandlers), 'resourceHandlers should be an object');
@@ -55,10 +57,9 @@ function Server (schema, resourceHandlers) {
         var batchCallback = function (arrayOfArgArrays) {
             var batched = backendUtils.batchArgs(arrayOfArgArrays, handlerInfo);
             return Promise.all(_.map(batched.arrayOfArgArrays, function (args) {
-                console.log('Fetching from ' + resource, args);
+                console.log('Fetching from ' + resource + ', args: ' + JSON.stringify(args));
                 console.assert(args.length === handlerInfo.args.length,
                             'Invalid arg count for ' + resource + ': ' + JSON.stringify(args));
-                console.log('calling ' + resource + ' with ' + JSON.stringify(args));
 
                 // Finally! calling the handler.
                 return that.fetchResourceDirectly(resource, args);

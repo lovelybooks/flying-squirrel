@@ -77,7 +77,7 @@ function fetchRef(schema, ref, getResource, store) {
                 var newRef = _.flatten([
                     newCollectionRef, referencedIds.join(','), _.slice(path, pathIndex+1)
                 ]).join('.');
-                console.log('Resolving star: ' + ref + ' → ' + newRef);
+                console.debug('Resolving star: ' + ref + ' → ' + newRef);
                 return fetchRef(schema, newRef, getResource, store);
             }); // jshint ignore:line
         }
@@ -104,7 +104,7 @@ function fetchRef(schema, ref, getResource, store) {
                 var newRef = _.flatten([
                     subSchema.ref, referencedIds.join(','), _.slice(path, pathIndex+1)
                 ]).join('.');
-                console.log('Resolving ref: ' + ref + ' → ' + newRef);
+                console.debug('Resolving ref: ' + ref + ' → ' + newRef);
                 return fetchRef(schema, newRef, getResource, store);
             }); // jshint ignore:line
         }
@@ -152,7 +152,7 @@ function batchArgs(arrayOfArgArrays, handlerInfo) {
         var allIds = _.unique(_.flatten(firstArgsFromEachArray));
         console.assert(!_.isArray(allIds[0])); // It should be a list of ids.
         var newArgs = [allIds];
-        console.log('Batched: ' + JSON.stringify(arrayOfArgArrays) + ' ------> ' + JSON.stringify(newArgs));
+        // console.log('Batched: ' + JSON.stringify(arrayOfArgArrays) + ' ------> ' + JSON.stringify(newArgs));
         return {
             arrayOfArgArrays: [newArgs],
             getIndividualResult: function (result, args) {
