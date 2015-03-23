@@ -4,7 +4,7 @@ var _ = require('lodash');
 
 var schemaUtils = require('./schemaUtils');
 
-// TODO: this code can be gratly simplified if we would end ust with the first resolved ref.
+// TODO: this code can be greatly simplified if we would end ust with the first resolved ref.
 // This way, store logic could be re-used to handle the reference raversal.
 
 function fetchRef(schema, ref, getResource, store) {
@@ -77,7 +77,7 @@ function fetchRef(schema, ref, getResource, store) {
                 var newRef = _.flatten([
                     newCollectionRef, referencedIds.join(','), _.slice(path, pathIndex+1)
                 ]).join('.');
-                console.debug('Resolving star: ' + ref + ' → ' + newRef);
+                // console.log('Resolving star: ' + ref + ' → ' + newRef); // TODO: make output configurable
                 return fetchRef(schema, newRef, getResource, store);
             }); // jshint ignore:line
         }
@@ -104,7 +104,7 @@ function fetchRef(schema, ref, getResource, store) {
                 var newRef = _.flatten([
                     subSchema.ref, referencedIds.join(','), _.slice(path, pathIndex+1)
                 ]).join('.');
-                console.debug('Resolving ref: ' + ref + ' → ' + newRef);
+                // console.log('Resolving ref: ' + ref + ' → ' + newRef); // TODO: make output configurable
                 return fetchRef(schema, newRef, getResource, store);
             }); // jshint ignore:line
         }
