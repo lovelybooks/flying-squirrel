@@ -43,6 +43,9 @@ function createInterceptor(schema, store, newRefCallback) {
                 return _.map(this.keys(), this.get.bind(this));
             },
             get: function(id) {
+                if (id == null) {
+                    throw new Error(id + ' id requested in ' + path);
+                }
                 return returnValueForGetter(
                     subSchema[0],
                     _.isObject(subStore) ? subStore[id] : undefined,
