@@ -187,7 +187,7 @@ var schemaUtils = {
                 problems.push('object with id=' + expectedSubResultId + ' expected, got ' + subResult.id);
             }
             _.each(_.keys(subResult), function (fieldName) {
-                if (fieldName !== 'id' && !_.contains(handlerInfo.primitives, fieldName)) {
+                if (!_.contains(handlerInfo.primitives, fieldName)) {
                     problems.push('Unexpected field ' + fieldName);
                 } else if (_.isUndefined(subResult[fieldName])) {
                     problems.push('Got undefined for ' + fieldName);
@@ -196,7 +196,7 @@ var schemaUtils = {
                 }
             });
             _.each(handlerInfo.primitives, function (fieldName) {
-                if (fieldName !== 'id' && !_.has(subResult, fieldName)) {
+                if (!_.has(subResult, fieldName)) {
                     problems.push('Field ' + fieldName + ' not found');
                 }
             });
