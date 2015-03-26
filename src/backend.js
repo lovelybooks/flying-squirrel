@@ -117,8 +117,10 @@ function fetchRef(schema, ref, getResource, store) {
                 console.assert(key.split(',').length === results.length, 'Invalid result count');
                 _.each(subStores, function(subStore) {
                     _.each(key.split(','), function (keyPart, i) {
-                        console.assert(!results[i] || !results[i].id || results[i].id == keyPart, // jshint ignore:line
-                                'invalid id: expected ' + keyPart + ', got ' + results[i].id);
+                        if (results[i] && results[i].id && results[i].id != keyPart) { // jshint ignore:line
+                            // NOTE: this is wrapped in an if, to avoid exception when accessing results[i].id
+                            console.assert(false, 'invalid id: expected ' + keyPart + ', got ' + results[i].id);
+                        }
                         subStore[keyPart] = results[i];
                     });
                 });
