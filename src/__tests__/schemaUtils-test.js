@@ -8,6 +8,7 @@ var schemaUtils = require('../schemaUtils');
 describe('schemaUtils', function () {
     var schema = {
         topics: [{
+            id: 123,
             name: 'Example topic',
             unicorns: 10,
             entries: [new Ref('entries')],
@@ -197,24 +198,24 @@ describe('schemaUtils', function () {
             var endpoint = 'topics.{}';
             var check = checkResourceResult.bind(null, endpoint, resourcesInfo[endpoint]);
             // valid examples
-            expect(check([[123]], [{name: 'Hello', unicorns: 5, tags: []}]))
-                .toEqual([], 'ok');
-            expect(check([[123]], [{name: 'Hello', unicorns: 0, tags: null}]))
-                .toEqual([], 'falsy field value is ok');
             expect(check([[123]], [{id: 123, name: 'Hello', unicorns: 5, tags: []}]))
-                .toEqual([], 'id can be there or not');
+                .toEqual([], 'ok');
+            expect(check([[123]], [{id: 123, name: 'Hello', unicorns: 0, tags: null}]))
+                .toEqual([], 'falsy field value is ok');
             // invalid examples
             expect(check([[123]], [{id: 456, name: 'Hello', unicorns: 5, tags: []}]))
                 .not.toEqual([], 'mismatched id');
-            expect(check([[456]], [{name: undefined, unicorns: 0, tags: []}]))
+            expect(check([[456]], [{id: 123, name: undefined, unicorns: 0, tags: []}]))
                 .not.toEqual([], 'null in results is ok, undefined isn\'t');
-            expect(check([[456]], [{name: 'Hello', unicorns: 0, tags: undefined}]))
+            expect(check([[456]], [{id: 123, name: 'Hello', unicorns: 0, tags: undefined}]))
                 .not.toEqual([], 'null in results is ok, undefined isn\'t');
-            expect(check([[123]], [{name: 'Hello', unicorns: {}, tags: []}]))
+            expect(check([[123]], [{id: 123, name: 'Hello', unicorns: {}, tags: []}]))
                 .not.toEqual([], 'object instead of primitive');
-            expect(check([[123]], [{name: 'Hello', tags: []}]))
+            expect(check([[123]], [{name: 'Hello', unicorns: 5, tags: []}]))
+                .not.toEqual([], 'missing id');
+            expect(check([[123]], [{id: 123, name: 'Hello', tags: []}]))
                 .not.toEqual([], 'missing field');
-            expect(check([[123]], [{name: 'Hello', unicorns: 0, tags: [], foo: 'bar'}]))
+            expect(check([[123]], [{id: 123, name: 'Hello', unicorns: 0, tags: [], foo: 'bar'}]))
                 .not.toEqual([], 'unexpected field');
         });
     });
@@ -271,6 +272,10 @@ describe('schemaUtils', function () {
                 'topics.123.name',
                 'topics.123.name',
             ])).toEqual(['topics.123']);
+            expect(filterRefs(schema, [
+                'topics.123.openingEntry',
+                'topics.123.openingEntry',
+            ])).toEqual(['topics.123.openingEntry']);
         });
         it('strips primitive refs', function () {
             expect(filterRefs(schema, [
