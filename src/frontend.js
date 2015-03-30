@@ -51,6 +51,9 @@ var frontend = {
                     }
                     // we'll fetch the data and try again
                     return dataSourceCallback(filteredNewRefs).then(function (newStoreData) {
+                        if (_.isString(newStoreData)) {
+                            throw newStoreData; // Looks like we got an error message.
+                        }
                         console.assert(_.isObject(newStoreData), 'got non-object from data source');
 
                         // TODO: assert that the new store really contains the data we requested
