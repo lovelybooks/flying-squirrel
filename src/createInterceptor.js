@@ -29,7 +29,7 @@ function createInterceptor(schema, store, newRefCallback) {
     function createSubInterceptorForCollection(subSchema, subStore, path) {
         console.assert(_.isArray(subSchema));
         console.assert(subSchema.length === 1);
-        return {
+        var collectionObj = {
             keys: function () {
                 if (_.isObject(subStore)) {
                     return _.keys(subStore); // Note this works for both objects and arrays.
@@ -57,6 +57,12 @@ function createInterceptor(schema, store, newRefCallback) {
                 return JSON.stringify(_.zipObject(keys, _.map(keys, this.get.bind(this))));
             },
         };
+        Object.defineProperty(collectionObj, 'length', {
+            get: function () {
+                throw new Error(path + '.length is not supported, use ' + path + '.getAll().length instead.');
+            },
+        });
+        return collectionObj;
     }
 
     function createSubInterceptorForObject(subSchema, subStore, path) {

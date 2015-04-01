@@ -17,17 +17,21 @@ var frontend = {
         console.assert(_.isObject(store));
 
         var refsWeAlreadyFetched = {};
+        var finished = false;
 
         return function IO(callback) {
 
             function iterate() {
                 var newRefs = [];
-                var mock = createInterceptor(schema, store, function (ref) {
+                var interceptor = createInterceptor(schema, store, function (ref) {
+                    if (finished) {
+                        throw new Error('Attempted to access ' + ref + ' in an Interceptor after the IO() promise was resolved');
+                    }
                     newRefs.push(ref);
                 });
                 var callbackError, callbackReturnValue;
                 try {
-                    callbackReturnValue = callback(mock);
+                    callbackReturnValue = callback(interceptor);
                 } catch (e) {
                     callbackError = e;
                 }
@@ -65,6 +69,7 @@ var frontend = {
                     // No more data requests. We finish.
                     // console.log('No more data requests. We finish.');
 
+                    // TODO invalidate interceptor
                     if (callbackError) {
                         throw callbackError; // aww... we failed. Looks like a bug in the callback.
                     } else {
