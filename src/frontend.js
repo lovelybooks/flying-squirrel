@@ -69,7 +69,7 @@ var frontend = {
                     // No more data requests. We finish.
                     // console.log('No more data requests. We finish.');
 
-                    // TODO invalidate interceptor
+                    finished = true;
                     if (callbackError) {
                         throw callbackError; // aww... we failed. Looks like a bug in the callback.
                     } else {

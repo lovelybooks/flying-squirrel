@@ -155,6 +155,21 @@ describe('frontend stuff', function () {
             });
         });
 
+        it('should throw an error if the data is used outside the callback', function (done) {
+            var store = {};
+            IO = generateApiProxy(schema, dataSourceCallback, store);
+            var stolenData;
+            IO(function (data) { // jshint ignore:line
+                stolenData = data;
+                return 'hello';
+            }).then(function () {
+                expect(function () {
+                    stolenData.topics.get(123);
+                }).toThrow();
+                done();
+            });
+        });
+
         it('should ask for the data repeatedly', function (done) {
             var resolve;
             dataSourceCallback.and.callFake(function () {
