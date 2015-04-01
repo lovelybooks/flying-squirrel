@@ -34,8 +34,10 @@ function createInterceptor(schema, store, newRefCallback) {
                 if (_.isObject(subStore)) {
                     return _.keys(subStore); // Note this works for both objects and arrays.
                 } else {
-                    // NOTE: we don't call the newRefCallback. It will be called when this item
-                    // will be accessed.
+                    // TODO: This causes a conflict between fetching data by keys and then calling
+                    // getAll() - it will return only the already-fetched keys and not try to
+                    // discover more.
+                    newRefCallback(path + '.*', subSchema[0]);
                     return ['*']; // hacky: the getter on this key should return item from schema
                 }
             },

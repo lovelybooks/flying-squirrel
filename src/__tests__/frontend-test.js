@@ -88,7 +88,7 @@ describe('frontend stuff', function () {
 
         it('should fail if the callback throws', function (done) {
             spyOn(console, 'log');
-            dataSourceCallback.and.returnValue(Promise.resolve({topics:{'123':{name: 'OMG'}}}));
+            dataSourceCallback.and.returnValue(Promise.resolve({topics:{'123':{name: 'LOL'}}}));
             var ioCallbackCalls = 0;
             IO(function (data) {
                 data.topics.get(123);
@@ -122,12 +122,12 @@ describe('frontend stuff', function () {
         });
 
         it('should return whatever the callback returned (value from backend)', function (done) {
-            dataSourceCallback.and.returnValue(Promise.resolve({topics:{'123':{name: 'OMG'}}}));
+            dataSourceCallback.and.returnValue(Promise.resolve({topics:{'123':{name: 'LOL'}}}));
             IO(function (data) { // jshint ignore:line
                 return data.topics.get(123);
             }).then(function (topic) {
-                expect(topic.name).toEqual('OMG');
-                // expect(topic).toEqual({name: 'OMG'}); // TODO: for now, Interceptor is returned
+                expect(topic.name).toEqual('LOL');
+                // expect(topic).toEqual({name: 'LOL'}); // TODO: for now, Interceptor is returned
                 done();
             });
         });
@@ -146,13 +146,42 @@ describe('frontend stuff', function () {
         it('should write data to the store', function (done) {
             var store = {};
             IO = generateApiProxy(schema, dataSourceCallback, store);
-            dataSourceCallback.and.returnValue(Promise.resolve({topics:{'123':{name: 'OMG'}}}));
+            dataSourceCallback.and.returnValue(Promise.resolve({topics:{'123':{name: 'LOL'}}}));
             IO(function (data) { // jshint ignore:line
                 return data.topics.get(123);
             }).then(function () {
-                expect(store.topics[123]).toEqual({name: 'OMG'});
+                expect(store.topics[123]).toEqual({name: 'LOL'});
                 done();
             });
+        });
+
+        it('should ask for the data repeatedly', function (done) {
+            var resolve;
+            dataSourceCallback.and.callFake(function () {
+                return new Promise(function (_resolve) {
+                    resolve = _resolve;
+                });
+            });
+            var callbackCallCount = 0;
+            IO(function (data) { // jshint ignore:line
+                callbackCallCount++;
+                if (callbackCallCount === 1) {
+                    return data.topics.get(10);
+                } else {
+                    return data.topics.get(123);
+                }
+            }).then(function (topic) {
+                expect(topic.name).toEqual('topic 123');
+                done();
+            });
+            setTimeout(function () {
+                expect(dataSourceCallback).toHaveBeenCalledWith(['topics.10']);
+                resolve({topics:{'10':{name: 'topic 10'}}});
+                setTimeout(function () {
+                    expect(dataSourceCallback).toHaveBeenCalledWith(['topics.123']);
+                    resolve({topics:{'123':{name: 'topic 123'}}});
+                }, 1);
+            }, 1);
         });
 
     });

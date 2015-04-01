@@ -115,6 +115,19 @@ describe('createInterceptor', function () {
             expect(pathSpy).toHaveBeenCalledWith('config.imagesUrl');
         });
 
+        it('should detect data we don\'t have yet (for collections)', function () {
+            expect(interceptor.topics.get(199).entries.getAll()).not.toBeNull();
+            expect(pathSpy).toHaveBeenCalledWith('topics.199.entries.*');
+        });
+
+        xit('should detect data we don\'t have yet (for partly-fetched collections)', function () {
+            // FIXME: There is a bug here. If some topics are present in the store, the
+            // interceptor will assume that we don't need to call 'topics.*' (which is not true).
+            // This will not work:
+            expect(interceptor.topics.getAll()).not.toBeNull();
+            expect(pathSpy).toHaveBeenCalledWith('topics.*');
+        });
+
         it('should detect data we don\'t have yet (for collection items)', function () {
             expect(interceptor.topics.get(199)).not.toBeNull();
             expect(pathSpy).toHaveBeenCalledWith('topics.199');
