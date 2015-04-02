@@ -25,7 +25,7 @@ var frontend = {
                 var newRefs = [];
                 var interceptor = createInterceptor(schema, store, function (ref) {
                     if (finished) {
-                        throw new Error('Attempted to access ' + ref + ' in an Interceptor after the IO() promise was resolved');
+                        throw new Error('Attempted to access ' + ref + ' in an Interceptor after the IO() promise was ' + finished);
                     }
                     newRefs.push(ref);
                 });
@@ -69,10 +69,11 @@ var frontend = {
                     // No more data requests. We finish.
                     // console.log('No more data requests. We finish.');
 
-                    finished = true;
                     if (callbackError) {
+                        finished = 'rejected';
                         throw callbackError; // aww... we failed. Looks like a bug in the callback.
                     } else {
+                        finished = 'resolved';
                         return callbackReturnValue;
                         // TODO var cleanData = {}; // just data, no mocks
                         // TODO return callback(cleanData);
