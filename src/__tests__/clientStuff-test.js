@@ -5,13 +5,13 @@ require('es6-promise').polyfill();
 var _ = require('lodash');
 
 var Ref = require('../Ref');
-var frontend = require('../frontend');
+var clientStuff = require('../clientStuff');
 
 
-describe('frontend stuff', function () {
+describe('clientStuff', function () {
 
     describe('generateApiProxy, a.k.a. IO()', function() {
-        var generateApiProxy = frontend.generateApiProxy;
+        var generateApiProxy = clientStuff.generateApiProxy;
 
         var schema = {
             topics: [{

@@ -8,7 +8,7 @@ var createInterceptor = require('./createInterceptor');
 var schemaUtils = require('./schemaUtils');
 
 
-var frontend = {
+var clientStuff = {
 
     generateApiProxy: function generateApiProxy(schema, dataSourceCallback, store) {
 
@@ -88,4 +88,4 @@ var frontend = {
     },
 };
 
-module.exports = frontend;
+module.exports = clientStuff;

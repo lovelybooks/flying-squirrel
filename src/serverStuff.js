@@ -179,7 +179,7 @@ function batchArgs(arrayOfArgArrays, handlerInfo) {
     }
 }
 
-var backendUtils = {
+var serverStuff = {
 
     // writes the data to store and returns a new ref (if we are not finished yet) or null
     fetchRef: fetchRef,
@@ -187,4 +187,4 @@ var backendUtils = {
     batchArgs: batchArgs,
 };
 
-module.exports = backendUtils;
+module.exports = serverStuff;

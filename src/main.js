@@ -4,8 +4,8 @@ require('es6-promise').polyfill();
 var _ = require('lodash');
 
 var Ref = require('./Ref');
-var backendUtils = require('./backend');
-var frontendUtils = require('./frontend');
+var serverStuff = require('./serverStuff');
+var clientStuff = require('./clientStuff');
 var schemaUtils = require('./schemaUtils');
 var Batcher = require('./Batcher');
 
@@ -55,7 +55,7 @@ function Server (schema, resourceHandlers) {
         console.assert(handlerInfo, 'Invalid handler ' + resource);
 
         var batchCallback = function (arrayOfArgArrays) {
-            var batched = backendUtils.batchArgs(arrayOfArgArrays, handlerInfo);
+            var batched = serverStuff.batchArgs(arrayOfArgArrays, handlerInfo);
             return Promise.all(_.map(batched.arrayOfArgArrays, function (args) {
                 console.log('Fetching from ' + resource + ', args: ' + JSON.stringify(args));
                 console.assert(args.length === handlerInfo.args.length,
@@ -107,7 +107,7 @@ function Server (schema, resourceHandlers) {
 
         // We use Promise.resolve().then(...) so that exceptions from fetchRef will reject the Promise.
         return Promise.resolve().then(function () {
-            return backendUtils.fetchRef(schema, ref, fetchResource, {});
+            return serverStuff.fetchRef(schema, ref, fetchResource, {});
         });
     };
 }
@@ -123,7 +123,7 @@ function Client (schema, fetchRefsCallback) {
     }.bind(this));
 
     this.IO = function (callback) {
-        var IO = frontendUtils.generateApiProxy(this.schema, this.batcher.get.bind(this.batcher), this.store);
+        var IO = clientStuff.generateApiProxy(this.schema, this.batcher.get.bind(this.batcher), this.store);
         return IO(callback);
     }.bind(this);
 }

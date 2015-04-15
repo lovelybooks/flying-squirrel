@@ -5,13 +5,13 @@ require('es6-promise').polyfill();
 var _ = require('lodash');
 
 var Ref = require('../Ref');
-var backendUtils = require('../backend');
+var serverStuff = require('../serverStuff');
 
 
-describe('backend stuff', function () {
+describe('serverStuff', function () {
 
     describe('fetchRef', function () {
-        var fetchRef = backendUtils.fetchRef;
+        var fetchRef = serverStuff.fetchRef;
         var schema = {
             topics: [{
                 id: 123,
@@ -196,7 +196,7 @@ describe('backend stuff', function () {
     });
 
     describe('batchArgs', function () {
-        var batchArgs = backendUtils.batchArgs;
+        var batchArgs = serverStuff.batchArgs;
 
         var handlerInfo;
         beforeEach(function () {
