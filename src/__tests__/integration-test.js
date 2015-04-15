@@ -120,15 +120,19 @@ describe('FlyingSquirrel integration test (for main.js)', function () {
             // And now we'll test the mock!
             .then(function () {
                 getRefsSpy.calls.reset();
-                return client.mockedIO(function (data) {
+
+                client.mockingEnabled = true;
+                client.store = {
+                    topics: {
+                        1: {name: 'omg mock'},
+                    },
+                };
+
+                return client.IO(function (data) {
                     return {
                         autoMockedName: data.topics.get(123).name,
                         handMockedName: data.topics.get(1).name,
                     };
-                }, {
-                    topics: {
-                        1: {name: 'omg mock'},
-                    },
                 });
             })
             .then(function (result) {

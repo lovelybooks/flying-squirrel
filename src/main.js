@@ -124,14 +124,13 @@ function Client (schema, fetchRefsCallback) {
     }.bind(this));
 
     this.IO = function (callback) {
-        var IO = clientStuff.generateApiProxy(this.schema, this.batcher.get.bind(this.batcher), this.store);
-        return IO(callback);
+        if (this.mockingEnabled) {
+            return callback(createInterceptor(this.schema, this.store, _.noop));
+        } else {
+            var IO = clientStuff.generateApiProxy(this.schema, this.batcher.get.bind(this.batcher), this.store);
+            return IO(callback);
+        }
     }.bind(this);
-
-    this.mockedIO = function(callback, mockedStore) {
-        var interceptor = createInterceptor(this.schema, mockedStore, _.noop);
-        return callback(interceptor);
-    };
 }
 
 var FlyingSquirrel = {
