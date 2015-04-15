@@ -4,13 +4,14 @@ require('es6-promise').polyfill();
 var _ = require('lodash');
 
 var Ref = require('./Ref');
+var createInterceptor = require('./createInterceptor');
 var serverStuff = require('./serverStuff');
 var clientStuff = require('./clientStuff');
 var schemaUtils = require('./schemaUtils');
 var Batcher = require('./Batcher');
 
 
-// TODO: move batching logic to backend.js or some other file, and unit-test it.
+// TODO: move batching logic to serverStuff.js or some other file, **and unit-test it**.
 
 function Server (schema, resourceHandlers) {
     console.assert(_.isObject(schema), 'schema should be an object');
@@ -126,6 +127,11 @@ function Client (schema, fetchRefsCallback) {
         var IO = clientStuff.generateApiProxy(this.schema, this.batcher.get.bind(this.batcher), this.store);
         return IO(callback);
     }.bind(this);
+
+    this.mockedIO = function(callback, mockedStore) {
+        var interceptor = createInterceptor(this.schema, mockedStore, _.noop);
+        return callback(interceptor);
+    };
 }
 
 var FlyingSquirrel = {

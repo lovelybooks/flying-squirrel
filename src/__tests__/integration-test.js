@@ -72,7 +72,6 @@ describe('FlyingSquirrel integration test (for main.js)', function () {
 
     it('works for Client', function (done) {
 
-
         // Disabling console output for this test.
         // spyOn(console, 'log');
         // spyOn(console, 'warn');
@@ -99,20 +98,45 @@ describe('FlyingSquirrel integration test (for main.js)', function () {
             // TODO: expect(refs).toEqual(['topics.1070937897.entries.*.author']);
             return Promise.resolve(mockedResponse);
         });
+
         var client = new FlyingSquirrel.Client(schema, getRefsSpy);
-        client.IO(function (data) {
-            return {
-                names: _.map(data.topics.get(1070937897).entries.getAll(), function (entry) {
-                    return entry.author.name;
-                }),
-            };
-        }).then(function (result) {
-            expect(result.names).toEqual(['Nick03', 'emmah9']);
-            expect(getRefsSpy.calls.count()).toBe(1);
-            done();
-        }).catch(function (err) {
-            expect(false).toBe(true, err);
-            done();
-        });
+
+        Promise.resolve()
+            .then(function () {
+                return client.IO(function (data) {
+                    return {
+                        names: _.map(data.topics.get(1070937897).entries.getAll(), function (entry) {
+                            return entry.author.name;
+                        }),
+                    };
+                });
+            })
+            .then(function (result) {
+                expect(result.names).toEqual(['Nick03', 'emmah9']);
+                expect(getRefsSpy.calls.count()).toBe(1);
+            })
+            .catch(fail)
+
+            // And now we'll test the mock!
+            .then(function () {
+                getRefsSpy.calls.reset();
+                return client.mockedIO(function (data) {
+                    return {
+                        autoMockedName: data.topics.get(123).name,
+                        handMockedName: data.topics.get(1).name,
+                    };
+                }, {
+                    topics: {
+                        1: {name: 'omg mock'},
+                    },
+                });
+            })
+            .then(function (result) {
+                expect(result.autoMockedName).toEqual('Example topic');
+                expect(result.handMockedName).toEqual('omg mock');
+                expect(getRefsSpy.calls.count()).toBe(0);
+            })
+            .catch(fail)
+            .then(done);
     });
 });
