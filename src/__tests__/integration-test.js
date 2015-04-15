@@ -101,46 +101,44 @@ describe('FlyingSquirrel integration test (for main.js)', function () {
 
         var client = new FlyingSquirrel.Client(schema, getRefsSpy);
 
-        Promise.resolve()
-            .then(function () {
-                return client.IO(function (data) {
-                    return {
-                        names: _.map(data.topics.get(1070937897).entries.getAll(), function (entry) {
-                            return entry.author.name;
-                        }),
-                    };
-                });
-            })
-            .then(function (result) {
+        Promise.resolve().then(function () {
+
+            // First, we test the real IO()
+            return client.IO(function (data) {
+                return {
+                    names: _.map(data.topics.get(1070937897).entries.getAll(), function (entry) {
+                        return entry.author.name;
+                    }),
+                };
+            }).then(function (result) {
                 expect(result.names).toEqual(['Nick03', 'emmah9']);
                 expect(getRefsSpy.calls.count()).toBe(1);
-            })
-            .catch(fail)
+            }).catch(fail);
+
+        }).then(function () {
 
             // And now we'll test the mock!
-            .then(function () {
-                getRefsSpy.calls.reset();
+            client.mockingEnabled = true;
+            client.store = {
+                topics: {
+                    1: {name: 'omg mock'},
+                },
+            };
 
-                client.mockingEnabled = true;
-                client.store = {
-                    topics: {
-                        1: {name: 'omg mock'},
-                    },
+            getRefsSpy.calls.reset();
+
+            return client.IO(function (data) {
+                return {
+                    autoMockedName: data.topics.get(123).name,
+                    handMockedName: data.topics.get(1).name,
                 };
-
-                return client.IO(function (data) {
-                    return {
-                        autoMockedName: data.topics.get(123).name,
-                        handMockedName: data.topics.get(1).name,
-                    };
-                });
-            })
-            .then(function (result) {
+            }).then(function (result) {
                 expect(result.autoMockedName).toEqual('Example topic');
                 expect(result.handMockedName).toEqual('omg mock');
                 expect(getRefsSpy.calls.count()).toBe(0);
-            })
-            .catch(fail)
-            .then(done);
+            }).catch(fail);
+
+        }).then(done);
+        
     });
 });

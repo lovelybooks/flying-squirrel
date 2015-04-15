@@ -125,7 +125,7 @@ function Client (schema, fetchRefsCallback) {
 
     this.IO = function (callback) {
         if (this.mockingEnabled) {
-            return callback(createInterceptor(this.schema, this.store, _.noop));
+            return Promise.resolve(callback(createInterceptor(this.schema, this.store, _.noop)));
         } else {
             var IO = clientStuff.generateApiProxy(this.schema, this.batcher.get.bind(this.batcher), this.store);
             return IO(callback);
