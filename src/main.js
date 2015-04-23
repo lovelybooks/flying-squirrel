@@ -58,7 +58,7 @@ function Server (schema, resourceHandlers) {
         var batchCallback = function (arrayOfArgArrays) {
             var batched = serverStuff.batchArgs(arrayOfArgArrays, handlerInfo);
             return Promise.all(_.map(batched.arrayOfArgArrays, function (args) {
-                console.log('Fetching from ' + resource + ', args: ' + JSON.stringify(args));
+                // console.log('Fetching from ' + resource + ', args: ' + JSON.stringify(args));
                 console.assert(args.length === handlerInfo.args.length,
                             'Invalid arg count for ' + resource + ': ' + JSON.stringify(args));
 
@@ -122,6 +122,11 @@ function Client (schema, fetchRefsCallback) {
         console.assert(_.isArray(arrayOfArraysOfRefs[0]));
         return fetchRefsCallback(schemaUtils.filterRefs(this.schema, _.flatten(arrayOfArraysOfRefs)));
     }.bind(this));
+
+    // TODO: enableMocking(store)
+    // TODO: disableMocking()
+    // TODO: setStore(store)
+    // TODO: schemaUtils.checkStoreIntegrity(store)
 
     this.IO = function (callback) {
         if (this.mockingEnabled) {

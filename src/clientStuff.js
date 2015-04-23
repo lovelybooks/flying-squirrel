@@ -48,8 +48,6 @@ var clientStuff = {
                     });
 
                     // Ah, the callback needs more data!
-                    // console.log('Ah, the callback needs more data!', JSON.stringify(newRefs, null, 4));
-                    // console.log('Filtered:', JSON.stringify(schemaUtils.filterRefs(schema, newRefs), null, 4));
                     if (callbackError) {
                         console.log('by the way... ', callbackError, callbackError.stack);
                     }
@@ -67,7 +65,6 @@ var clientStuff = {
                     });
                 } else {
                     // No more data requests. We finish.
-                    // console.log('No more data requests. We finish.');
 
                     if (callbackError) {
                         finished = 'rejected';
@@ -75,8 +72,6 @@ var clientStuff = {
                     } else {
                         finished = 'resolved';
                         return callbackReturnValue;
-                        // TODO var cleanData = {}; // just data, no mocks
-                        // TODO return callback(cleanData);
                     }
                 }
             }
