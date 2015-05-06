@@ -84,3 +84,6 @@ The schema you give to Squirrel defines your data tree (on which the squirrel wi
     npm test             # run the tests (notice the report)
 
     npm run watch        # continuous testing for use during development
+
+Look at the test report to get an overview of the code.
+You can also treat the tests themselves as a documentation.
