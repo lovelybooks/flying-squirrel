@@ -170,6 +170,25 @@ describe('clientStuff', function () {
             });
         });
 
+        it('should request the data just once if IO() was called inside the IO() callback', function (done) {
+            pending();
+            var store = {};
+            IO = generateApiProxy(schema, dataSourceCallback, store);
+            IO(function (data) { // jshint ignore:line
+                return {
+                    first: data.topics.get(123),
+                    second: IO(function (data) {
+                        return data.topics.get(456);
+                    }),
+                };
+            }).then(function () {
+                // TODO
+                done();
+            });
+        });
+
+        it('should not break if the IO() inside the IO() callback takes longer than the one ouside');
+
         it('should ask for the data repeatedly', function (done) {
             var resolve;
             dataSourceCallback.and.callFake(function () {
