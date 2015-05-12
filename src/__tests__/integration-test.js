@@ -139,6 +139,6 @@ describe('FlyingSquirrel integration test (for main.js)', function () {
             }).catch(fail);
 
         }).then(done);
-        
+
     });
 });
