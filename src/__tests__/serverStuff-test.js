@@ -118,9 +118,8 @@ describe('serverStuff', function () {
                     {id: 14, text: 'bar'},
                     {id: 16, text: 'baz'},
                 ]);
-                expect(_.keys(store.topics[123].entries)).toEqual(['0', '1', '2']);
-                expect(_.values(store.topics[123].entries)).toEqual([12, 14, 16]);
-                expect(_.sortBy(_.keys(store.entries))).toEqual(['12', '14', '16']);
+                expect(store.topics[123].entries.__keys).toEqual(['12', '14', '16']);
+                expect(store.entries.__keys).not.toBeDefined('because we didn\'t fetch entries.*');
                 expect(store.entries[16].text).toEqual('baz');
             });
             it('works with \'*\' for collections of objects (entries.*)', function () {
@@ -133,7 +132,7 @@ describe('serverStuff', function () {
                     {id: 14, text: 'bar'},
                     {id: 16, text: 'baz'},
                 ]);
-                expect(_.sortBy(_.keys(store.entries))).toEqual(['12', '14', '16']);
+                expect(_.sortBy(store.entries.__keys)).toEqual(['12', '14', '16']);
                 expect(store.entries[16].text).toEqual('baz');
             });
             it('works with \'*\' for stuff inside collections (entries.*.author)', function () {
@@ -151,8 +150,8 @@ describe('serverStuff', function () {
                 expect(store.entries[12]).toEqual({author: 102});
                 expect(store.entries[14]).toEqual({author: 104});
                 expect(store.entries[16]).toEqual({author: 106});
-                expect(_.size(store.entries)).toEqual(3);
-                expect(_.sortBy(_.keys(store.users))).toEqual(['102', '104', '106']);
+                expect(_.size(store.entries.__keys)).toEqual(3);
+                expect(store.users.__keys).not.toBeDefined('because we didn\'t fetch users.*');
                 expect(store.users[106].name).toEqual('Batman');
             });
             it('handles null references nicely (meaning: no referenced object)', function () {
@@ -182,7 +181,7 @@ describe('serverStuff', function () {
                 respondWith([[]]);
                 jasmine.clock().tick(10);
                 expect(getResourceSpy).not.toHaveBeenCalled(); // We expect no more requests.
-                expect(store.topics[123].entries).toEqual({});
+                expect(store.topics[123].entries).toEqual({__keys: []});
                 expect(_.keys(store.topics).length).toBe(1);
                 expect(_.keys(store.entries).length).toBe(0);
             });

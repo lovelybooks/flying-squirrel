@@ -91,6 +91,7 @@ function Server (schema, resourceHandlers) {
     };
 
     that.fetchResource = function fetchResource(resource, args) {
+        console.assert(_.isFunction(resourceHandlers[resource]), 'Handler not found: ' + resource);
         console.assert(_.isArray(args), 'Args should be an array');
 
         if (!_.has(that.resourceBatchers, resource)) {

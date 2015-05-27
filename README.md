@@ -131,3 +131,11 @@ there's no magic there. When you call `IO(function callback(data) {...})`:
 * I'd love to have some nicer logo than the current one :)
 
 **If you'd like to help develop squirrel, please refer to [README-dev.md](README-dev.md)**
+
+## Project roadmap
+
+* Add support for querying collections.
+* Let client invalidate some parts of the store easily
+* Separate the debug utilities from the core code (and make them optional)
+* Refactor the tests to stop using the buggy Jasmine clock
+* Think about an abstraction for handling write operations

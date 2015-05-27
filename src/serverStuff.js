@@ -52,11 +52,12 @@ function fetchRef(schema, ref, getResource, store) {
                 if (subSchemaType === 'reference') {
                     // We fetch all references from a collection
 
+                    // Result is a list of lists of referenecd ids, one list per subStore.
+                    // But currently we support querying only one collection at a time.
                     console.assert(result.length === 1, 'Nested collections not supported'); // TODO
                     referencedIds = result[0];
                     console.assert(referencedIds);
 
-                    // Result is a list of lists of referenecd ids, one list per subStore.
                     _.each(subStores, function(subStore) {
                         // subStore will become an object with array-like structure
                         _.assign(subStore, referencedIds);
@@ -69,6 +70,13 @@ function fetchRef(schema, ref, getResource, store) {
                     referencedIds = result;
                     newCollectionRef = _.slice(path, 0, pathIndex).join('.');
                 }
+
+                // Saving the keys
+                _.each(subStores, function(subStore) {
+                    subStore.__keys = _.map(referencedIds, function (id) {
+                        return '' + id; // converting all keys to strings
+                    });
+                });
 
                 if (referencedIds.length === 0) {
                     return store; // The collection is empty - we end the recursion.

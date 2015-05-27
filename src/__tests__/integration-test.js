@@ -79,8 +79,10 @@ describe('FlyingSquirrel integration test (for main.js)', function () {
         var mockedResponse = {
             topics: {
                 '1070937897': {
-                    'entries': ['1070942045', '1088602332'],
-                }
+                    'entries': {
+                        __keys: ['1070942045', '1088602332'],
+                    },
+                },
             },
             entries: {
                 '1070942045': {author: 1070934875},
@@ -138,7 +140,7 @@ describe('FlyingSquirrel integration test (for main.js)', function () {
                 expect(getRefsSpy.calls.count()).toBe(0);
             }).catch(fail);
 
-        }).then(done);
+        }).then(done).catch(fail);
 
     });
 });

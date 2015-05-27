@@ -1,6 +1,8 @@
 /*jshint jasmine: true */
 'use strict';
 
+var _ = require('lodash');
+
 var createInterceptor = require('../createInterceptor');
 var Ref = require('../Ref');
 
@@ -72,12 +74,19 @@ describe('createInterceptor', function () {
                     id: 123,
                     name: 'Example topic from Store',
                     entries: {
-                        '0': 12,
-                        '1': '15',
+                        __keys: ['12', '15'],
+                    },
+                },
+                '124': {
+                    id: 124,
+                    name: 'another one, from Store',
+                    entries: {
+                        __keys: ['12', '15', '17'],
                     },
                 },
             },
             entries: {
+                __keys: ['12', '15', '17'],
                 '12': {
                     text: 'uuuu uuuu uuuuu uuuu uuuuuuuu uuuuuu uuu uuu!',
                     author: null,
@@ -120,17 +129,28 @@ describe('createInterceptor', function () {
             expect(pathSpy).toHaveBeenCalledWith('topics.199.entries.*');
         });
 
-        xit('should detect data we don\'t have yet (for partly-fetched collections)', function () {
-            // FIXME: There is a bug here. If some topics are present in the store, the
-            // interceptor will assume that we don't need to call 'topics.*' (which is not true).
-            // This will not work:
+        it('should detect data we don\'t have yet (for partly-fetched collections)', function () {
             expect(interceptor.topics.getAll()).not.toBeNull();
             expect(pathSpy).toHaveBeenCalledWith('topics.*');
+        });
+
+        it('should detect data we don\'t have yet (for objects in partly-fetched collections)', function () {
+            var allEntries = interceptor.entries.getAll();
+            expect(allEntries).not.toBeNull();
+            expect(_.map(allEntries, function(entry) {
+                return entry.author && entry.author.name;
+            })).toEqual([null, 'Frodo', 'Winnie Pooh']);
+            expect(pathSpy).toHaveBeenCalledWith('entries.17'); // this is the only entry missing
+            expect(pathSpy).toHaveBeenCalledWith('entries.17.author');
+            expect(pathSpy).not.toHaveBeenCalledWith('entries.12.author');
+            expect(pathSpy).not.toHaveBeenCalledWith('entries.15');
+            expect(pathSpy).not.toHaveBeenCalledWith('entries.*');
         });
 
         it('should detect data we don\'t have yet (for collection items)', function () {
             expect(interceptor.topics.get(199)).not.toBeNull();
             expect(pathSpy).toHaveBeenCalledWith('topics.199');
+            expect(pathSpy).not.toHaveBeenCalledWith('topics.*');
         });
 
         it('should detect data we don\'t have yet (for references)', function () {
@@ -142,16 +162,30 @@ describe('createInterceptor', function () {
         });
 
         it('should work the same for both fetched and non-fetched data', function () {
-            expect(interceptor.topics.get(123).entries.get(1).text).toEqual('Sample entry from store');
+            expect(interceptor.topics.get(123).entries.get(15).text).toEqual('Sample entry from store');
             expect(pathSpy).not.toHaveBeenCalled();
-            expect(interceptor.topics.get(199).entries.get(1).text).toEqual('Sample entry from schema');
-            expect(pathSpy).toHaveBeenCalledWith('topics.199.entries.1.text');
+            expect(interceptor.topics.get(199).entries.get(19).text).toEqual('Sample entry from schema');
+            expect(pathSpy).toHaveBeenCalledWith('topics.199.entries.19.text');
+        });
+
+        it('should know that references use the same key as the objects in referenced collection', function () {
+            expect(interceptor.topics.get(199).entries.get(15).text).toEqual(interceptor.entries.get(15).text);
+        });
+
+        it('should maintain the reference ids when iterating or indexing', function () {
+            var allEntriesFromTopic = interceptor.topics.get(124).entries.getAll();
+            expect(allEntriesFromTopic[2].author.name).toEqual('Winnie Pooh');
+            expect(pathSpy).not.toHaveBeenCalledWith('topics.124.entries');
+            expect(pathSpy).not.toHaveBeenCalledWith('topics.124.entries.2.author');
+            expect(pathSpy).toHaveBeenCalledWith('topics.124.entries.17.author');
         });
 
         it('has inconsistent API that should be refactored', function () {
-            var s1 = interceptor.topics.get(123).entries.get(1).text;
-            var s2 = dataStoreExample.entries[dataStoreExample.topics[123].entries[1]].text;
-            expect(s1).toEqual(s2);
+            expect(
+                interceptor.topics.get(123).entries.getAll()[1].text
+            ).toEqual(
+                dataStoreExample.entries[dataStoreExample.topics[123].entries.__keys[1]].text
+            );
         });
     });
 });

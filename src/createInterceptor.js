@@ -32,26 +32,28 @@ function createInterceptor(schema, store, newRefCallback) {
         var collectionObj = {
             keys: function () {
                 if (_.isObject(subStore)) {
-                    return _.keys(subStore); // Note this works for both objects and arrays.
-                } else {
-                    // TODO: This causes a conflict between fetching data by keys and then calling
-                    // getAll() - it will return only the already-fetched keys and not try to
-                    // discover more.
-                    console.warn('FlyingSquirrel bug: the collection ' + path + ' might not be complete');
-                    newRefCallback(path + '.*', subSchema[0]);
-                    return ['*']; // hacky: the getter on this key should return item from schema
+                    var keys = subStore.__keys;
+                    console.assert(_.isUndefined(keys) || _.isArray(keys));
+                    // TODO: support for criteria using e.g. keys[JSON.stringify(criteria)]
+                    if (keys) {
+                        return _.clone(keys);
+                    }
                 }
+                newRefCallback(path + '.*', subSchema[0]);
+                return ['*']; // hacky: the getter on this key should return item from schema
             },
-            getAll: function() {
-                return _.map(this.keys(), this.get.bind(this));
+            getAll: function () {
+                return _.map(this.keys(), this.get, this);
             },
-            get: function(id) {
+            get: function (id) {
+                console.assert(id !== '__keys');
                 if (id == null) {
                     throw new Error(id + ' id requested in ' + path);
                 }
+                var isReference = subSchema[0] instanceof Ref;
                 return returnValueForGetter(
                     subSchema[0],
-                    _.isObject(subStore) ? subStore[id] : undefined,
+                    isReference ? id : (_.isObject(subStore) ? subStore[id] : undefined),
                     path + '.' + id
                 );
             },
