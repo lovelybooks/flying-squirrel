@@ -10,6 +10,8 @@ var determineType = require('./schemaUtils').determineType;
 // A constructor for our objects (this name will show up in the debugger)
 function Interceptor() {}
 
+// The newRefCallback will be called whenever a new ref is accessed.
+// When inside IO(), this callback would get the needed data and put it to store.
 function createInterceptor(schema, store, newRefCallback) {
     console.assert(_.isObject(schema));
     console.assert(_.isObject(store));

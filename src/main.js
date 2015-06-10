@@ -129,6 +129,10 @@ function Client (schema, fetchRefsCallback) {
     // TODO: setStore(store)
     // TODO: schemaUtils.checkStoreIntegrity(store)
 
+    // TODO: getPendingIOs()
+    // TODO: make IO return result or promise, and IOPromise to always return a promise.
+    // TODO: alternatively, have IO that returns a promise and IOSync that always returns a result (possibly containing mock data)
+
     this.IO = function (callback) {
         if (this.mockingEnabled) {
             return Promise.resolve(callback(createInterceptor(this.schema, this.store, _.noop)));
