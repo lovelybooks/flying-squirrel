@@ -58,11 +58,6 @@ function fetchRef(schema, ref, getResource, store) {
                     referencedIds = result[0];
                     console.assert(referencedIds);
 
-                    _.each(subStores, function(subStore) {
-                        // subStore will become an object with array-like structure
-                        _.assign(subStore, referencedIds);
-                    });
-
                     newCollectionRef = subSchema.ref; // By the way: we resolve the reference
                 } else {
                     // We fetch ids of all objects from the collection.

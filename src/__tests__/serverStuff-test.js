@@ -84,7 +84,7 @@ describe('serverStuff', function () {
                 });
             });
             function startTestingFetchRef(ref) {
-                fetchRef(schema, ref, getResourceSpy, store);
+                fetchRef(schema, ref, getResourceSpy, store).catch(fail);
                 jasmine.clock().tick(1);
             }
             function expectResouceRequest(resource, args) {
@@ -112,6 +112,8 @@ describe('serverStuff', function () {
                 startTestingFetchRef('topics.123.entries.*');
                 expectResouceRequest('topics.{}.entries', [['123'], {}]);
                 respondWith([[12, 14, 16]]); // Returning list for each requested topic
+                expect(_.keys(store.topics[123].entries)).toEqual(['__keys']); // Note no objects
+                expect(store.topics[123].entries.__keys).toEqual(['12', '14', '16']);
                 expectResouceRequest('entries.{}', [['12', '14', '16']]);
                 respondWith([
                     {id: 12, text: 'foo'},
@@ -150,7 +152,9 @@ describe('serverStuff', function () {
                 expect(store.entries[12]).toEqual({author: 102});
                 expect(store.entries[14]).toEqual({author: 104});
                 expect(store.entries[16]).toEqual({author: 106});
-                expect(_.size(store.entries.__keys)).toEqual(3);
+                expect(_.keys(store.entries)).toEqual(['__keys', '12', '14', '16']); // Note the objects
+                expect(store.entries.__keys).toEqual(jasmine.any(Array));
+                expect(store.entries.__keys).toEqual(['12', '14', '16']);
                 expect(store.users.__keys).not.toBeDefined('because we didn\'t fetch users.*');
                 expect(store.users[106].name).toEqual('Batman');
             });

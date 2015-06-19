@@ -109,7 +109,10 @@ function Server (schema, resourceHandlers) {
 
         // We use Promise.resolve().then(...) so that exceptions from fetchRef will reject the Promise.
         return Promise.resolve().then(function () {
-            return serverStuff.fetchRef(schema, ref, fetchResource, {});
+            return serverStuff.fetchRef(schema, ref, fetchResource, {}).catch(function (err) {
+                console.error('Error in Squirrel.Server.fetch: ' + err);
+                throw err;
+            });
         });
     };
 }
