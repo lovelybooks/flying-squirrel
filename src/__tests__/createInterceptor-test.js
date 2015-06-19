@@ -105,7 +105,7 @@ describe('createInterceptor', function () {
         var pathSpy, interceptor;
 
         beforeEach(function() {
-            pathSpy = jasmine.createSpy();
+            pathSpy = jasmine.createSpy('getRef(path)');
             interceptor = createInterceptor(dataModelDef, dataStoreExample, function (ref) {
                 pathSpy(ref); // NOTE: we drop all the other arguments. They are tested in other tests.
             });
@@ -161,23 +161,40 @@ describe('createInterceptor', function () {
             expect(pathSpy).toHaveBeenCalledWith('topics.123.openingEntry.text');
         });
 
+        it('should handle collections of references correctly', function () {
+            expect(interceptor.topics.get(199).entries.getAll()).not.toBeNull();
+            expect(pathSpy).toHaveBeenCalledWith('topics.199.entries.*');
+            expect(pathSpy).not.toHaveBeenCalledWith('entries.*');
+            pathSpy.calls.reset();
+            expect(interceptor.topics.get(199).entries.get(567)).not.toBeNull();
+            // Note that the library will not even check if topics.199.entries.567 exists. (TODO: maybe do something about it)
+            expect(pathSpy).not.toHaveBeenCalledWith('topics.199.entries.567');
+            expect(pathSpy).toHaveBeenCalledWith('entries.567');
+            pathSpy.calls.reset();
+            expect(_.map(interceptor.topics.get(199).entries.getAll(), 'author')).not.toBeNull();
+            expect(pathSpy).toHaveBeenCalledWith('topics.199.entries.*.author');
+            expect(pathSpy).not.toHaveBeenCalledWith('entries.*.author');
+        });
+
         it('should work the same for both fetched and non-fetched data', function () {
             expect(interceptor.topics.get(123).entries.get(15).text).toEqual('Sample entry from store');
             expect(pathSpy).not.toHaveBeenCalled();
             expect(interceptor.topics.get(199).entries.get(19).text).toEqual('Sample entry from schema');
-            expect(pathSpy).toHaveBeenCalledWith('topics.199.entries.19.text');
+            expect(pathSpy).toHaveBeenCalledWith('entries.19.text');
         });
 
         it('should know that references use the same key as the objects in referenced collection', function () {
             expect(interceptor.topics.get(199).entries.get(15).text).toEqual(interceptor.entries.get(15).text);
         });
 
-        it('should maintain the reference ids when iterating or indexing', function () {
+        it('should maintain the references when iterating or indexing', function () {
             var allEntriesFromTopic = interceptor.topics.get(124).entries.getAll();
             expect(allEntriesFromTopic[2].author.name).toEqual('Winnie Pooh');
             expect(pathSpy).not.toHaveBeenCalledWith('topics.124.entries');
             expect(pathSpy).not.toHaveBeenCalledWith('topics.124.entries.2.author');
-            expect(pathSpy).toHaveBeenCalledWith('topics.124.entries.17.author');
+            expect(pathSpy).not.toHaveBeenCalledWith('topics.124.entries.17.author');
+            expect(pathSpy).not.toHaveBeenCalledWith('entries.2.author');
+            expect(pathSpy).toHaveBeenCalledWith('entries.17.author');
         });
 
         it('has inconsistent API that should be refactored', function () {

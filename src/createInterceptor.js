@@ -53,11 +53,20 @@ function createInterceptor(schema, store, newRefCallback) {
                     throw new Error(id + ' id requested in ' + path);
                 }
                 var isReference = subSchema[0] instanceof Ref;
-                return returnValueForGetter(
-                    subSchema[0],
-                    isReference ? id : (_.isObject(subStore) ? subStore[id] : undefined),
-                    path + '.' + id
-                );
+                if (isReference) {
+                    return returnValueForGetter(
+                        subSchema[0],
+                        id, // For references, the stored value is just the referenced id
+                        // And if we don't reference *, we jump to the referenced path.
+                        (id !== '*' ? subSchema[0].ref : path) + '.' + id
+                    );
+                } else {
+                    return returnValueForGetter(
+                        subSchema[0],
+                        _.isObject(subStore) ? subStore[id] : undefined,
+                        path + '.' + id
+                    );
+                }
             },
             toJSON: function() {
                 var keys = this.keys();

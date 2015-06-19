@@ -59,7 +59,7 @@ describe('clientStuff', function () {
             IO(function (data) {
                 var topic = data.topics.get(123);
                 var entryCount = topic.entries.getAll().length;
-                var lastEntryAuthor = topic.entries.get(entryCount - 1).author;
+                var lastEntryAuthor = topic.entries.getAll()[entryCount - 1].author;
                 return {
                     name: topic.name,
                     entryTextSummaries: _.map(topic.entries.getAll(), function (entry) {
@@ -77,9 +77,8 @@ describe('clientStuff', function () {
                 expect(dataSourceCallback).toHaveBeenCalledWith([
                     'topics.123',
                     'topics.123.entries.*',
-                    'topics.123.entries.0',
-                    'topics.123.entries.0.author',
-                    'topics.123.entries.0.author.avatar',
+                    'topics.123.entries.*.author', // this is sub-optimal, btw
+                    'topics.123.entries.*.author.avatar',
                 ]);
                 expect(dataSourceCallback.calls.count()).toBe(1);
                 done();
