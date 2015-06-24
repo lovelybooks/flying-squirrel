@@ -28,6 +28,7 @@ If you're just looking for a library for handling fetching data via HTTP for you
 app, **beware** - this one is **not stable** yet. The APIs are likely to change before `1.0`,
 the first stable version.
 
+
 ## Quick start - how to use it:
 
 You can install the library with:
@@ -93,21 +94,43 @@ var client = new squirrel.Client(schema, getRefsCallback);
 
 This should be enough. Now you should be able to use squirrel like in the example on the top.
 
-### More about the schema and refs
+
+# API documentation (mostly TODO)
+
+## Server
+
+* `new Server (schema, resourceHandlers)`
+* `fetch`
+* `fetchResource`
+* `fetchResourceDirectly`
+* `prepareBatcherForResource`
+
+
+## Client
+
+* `IO(callback)`
+* `configure` (TODO)
+
+
+## More about the schema and refs
 
 The schema you give to Squirrel determines the structure of your data tree
-(on which the squirrel will jump). This tree is built out of 4 types of building blocks
-(in the code they are called “ref types”):
+(on which the squirrel will jump). This tree is built out of 4 types of building blocks:
 
 * **primitives** (like strings or numbers),
 * **objects** (as in json: they have string keys and values of any type),
 * **collections** (which have string keys too, but can be fetched only partially and queried in interesting ways),
 * **references** (to an object inside a collection anywhere else in the tree).
 
-For example, in the above schema `topics` is a collection, `topics.123` is an object, `topics.123.name` is a primitive and `topics.123.openingEntry` is a reference.
+For example, in the above schema `topics` is a collection, `topics.123` is an object,
+`topics.123.name` is a primitive and `topics.123.openingEntry` is a reference.
 `topics.123.openingEntry.text` would resolve to `entries.456.text`, which is a primitive.
 
-### More about IO()
+These 4 types are called “ref types” in the code, and "reference" is one of these "ref types".
+(Yes, it would be a good idea to change this misleading "ref" name, but for now it is as it is.)
+
+
+## More about client IO()
 
 The `IO()` function may seem magical (how does it know what data to fetch?), but in fact
 there's no magic there. When you call `IO(function callback(data) {...})`:
@@ -122,7 +145,11 @@ there's no magic there. When you call `IO(function callback(data) {...})`:
 * The mock gets locked to prevent bugs. If some async callback tries to access the data outside of the `IO`'s `callback`, an error will be thrown.
 * The promise returned initially by `IO()` is resolved with the value returned by callback.
 
-## How you can contribute
+The `store` used by client is an ordinary JSON object. You can easily save it to `localStorage`,
+or embed it in your js to speed up the first loading. You can also mock it for unit tests.
+
+
+# How you can contribute
 
 * Just download it and try to use it. Report any issues you have.
 * spread the word on facebook, twitter or your company.
@@ -130,9 +157,10 @@ there's no magic there. When you call `IO(function callback(data) {...})`:
 * write more tests for edge cases
 * I'd love to have some nicer logo than the current one :)
 
-**If you'd like to help develop squirrel, please refer to [README-dev.md](README-dev.md)**
+**If you'd like to help develop squirrel, please refer to [CONTRIBUTING.md](CONTRIBUTING.md)**
 
-## Project roadmap
+
+# Project roadmap
 
 * Add support for querying collections.
 * Let client invalidate some parts of the store easily
