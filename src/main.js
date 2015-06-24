@@ -127,6 +127,13 @@ function Client (schema, fetchRefsCallback) {
         return fetchRefsCallback(schemaUtils.filterRefs(this.schema, _.flatten(arrayOfArraysOfRefs)));
     }.bind(this));
 
+    // configure({
+    //     schema: {},
+    //     fetchRefsCallback: function (refs) {}, // before update
+    //     afterUpdateCallback: function () {},
+    //     useMockInsteadOfFetching: false,
+    //     synchronuousResultWhenPossible: true,
+    // })
     // TODO: enableMocking(store)
     // TODO: disableMocking()
     // TODO: setStore(store)
@@ -138,9 +145,10 @@ function Client (schema, fetchRefsCallback) {
 
     this.IO = function (callback) {
         if (this.mockingEnabled) {
-            return Promise.resolve(callback(createInterceptor(this.schema, this.store, _.noop)));
+            return callback(createInterceptor(this.schema, this.store, _.noop));
         } else {
-            var IO = clientStuff.generateApiProxy(this.schema, this.batcher.get.bind(this.batcher), this.store);
+            var dataSourceCallback = this.batcher.get.bind(this.batcher);
+            var IO = clientStuff.generateApiProxy(this.schema, dataSourceCallback, this.store);
             return IO(callback);
         }
     }.bind(this);

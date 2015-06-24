@@ -129,12 +129,12 @@ describe('FlyingSquirrel integration test (for main.js)', function () {
 
             getRefsSpy.calls.reset();
 
-            return client.IO(function (data) {
+            return Promise.resolve(client.IO(function (data) {
                 return {
                     autoMockedName: data.topics.get(123).name,
                     handMockedName: data.topics.get(1).name,
                 };
-            }).then(function (result) {
+            })).then(function (result) {
                 expect(result.autoMockedName).toEqual('Example topic');
                 expect(result.handMockedName).toEqual('omg mock');
                 expect(getRefsSpy.calls.count()).toBe(0);

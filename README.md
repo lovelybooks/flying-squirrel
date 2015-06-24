@@ -135,8 +135,9 @@ These 4 types are called “ref types” in the code, and "reference" is one of 
 The `IO()` function may seem magical (how does it know what data to fetch?), but in fact
 there's no magic there. When you call `IO(function callback(data) {...})`:
 
+* The `callback` is called with the mock data, generated from schema. This mock (a.k.a. `Interceptor`) also tracks the accessed fields and references, so after the callback finishes (or throws), the `IO` function has a list of all the fields that the function tried to access.
+* If there were no data requests, `IO()` returns the result (synchronously) and finishes execution.
 * `IO()` returns a promise of the result. This promise will later resolve to the return value of `callback`.
-* The `callback` is called with the mock data, generated from shema. This mock also tracks the accessed fields and references, so after the callback finishes (or throws), the `IO` function has a list of all the fileds that the function tried to access.
 * The client's `getRefsCallback` is called, thus telling the server "give me these refs".
 * The server calls its relevant `resourceHandlers`, attempting to do it in an optimal way (i.e. to call each handler at most once)
 * The server returns a response, which contains a JSON object with the requested data in the structure defined by schema.

@@ -13,7 +13,6 @@ var clientStuff = {
     // TODO: put newRefs and refsWeAlreadyFetched into the client object, so that
     // different calls on the same client cause just one request
 
-    // TODO: implement additional syncMode arg (or...?)
     generateApiProxy: function generateApiProxy(schema, dataSourceCallback, store) {
 
         console.assert(_.isObject(schema));

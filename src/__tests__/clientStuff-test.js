@@ -112,9 +112,9 @@ describe('clientStuff', function () {
         });
 
         it('should return whatever the callback returned (simple, static value)', function (done) {
-            IO(function (data) { // jshint ignore:line
+            Promise.resolve(IO(function (data) { // jshint ignore:line
                 return 'unicorn';
-            }).then(function (value) {
+            })).then(function (value) {
                 expect(value).toEqual('unicorn');
                 done();
             });
@@ -122,9 +122,9 @@ describe('clientStuff', function () {
 
         it('should return whatever the callback returned (value from backend)', function (done) {
             dataSourceCallback.and.returnValue(Promise.resolve({topics:{'123':{name: 'LOL'}}}));
-            IO(function (data) { // jshint ignore:line
+            Promise.resolve(IO(function (data) { // jshint ignore:line
                 return data.topics.get(123);
-            }).then(function (topic) {
+            })).then(function (topic) {
                 expect(topic.name).toEqual('LOL');
                 // expect(topic).toEqual({name: 'LOL'}); // TODO: for now, Interceptor is returned
                 done();
@@ -134,9 +134,9 @@ describe('clientStuff', function () {
         it('should read data from the store', function (done) {
             var store = {users: {'7': {name: 'James Bond'}}};
             IO = generateApiProxy(schema, dataSourceCallback, store);
-            IO(function (data) { // jshint ignore:line
+            Promise.resolve(IO(function (data) { // jshint ignore:line
                 return data.users.get(7).name;
-            }).then(function (value) {
+            })).then(function (value) {
                 expect(value).toEqual('James Bond');
                 done();
             });
@@ -158,10 +158,10 @@ describe('clientStuff', function () {
             var store = {};
             IO = generateApiProxy(schema, dataSourceCallback, store);
             var stolenData;
-            IO(function (data) { // jshint ignore:line
+            Promise.resolve(IO(function (data) { // jshint ignore:line
                 stolenData = data;
                 return 'hello';
-            }).then(function () {
+            })).then(function () {
                 expect(function () {
                     stolenData.topics.get(123);
                 }).toThrow();
