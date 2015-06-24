@@ -109,6 +109,7 @@ This should be enough. Now you should be able to use squirrel like in the exampl
 ## Client
 
 * `IO(callback)`
+* `getDataForDynamicIO(onDataRequested, onDataFetched)` (new!)
 * `configure` (TODO)
 
 

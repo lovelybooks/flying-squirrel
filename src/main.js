@@ -152,6 +152,15 @@ function Client (schema, fetchRefsCallback) {
             return IO(callback);
         }
     }.bind(this);
+
+    this.getDataForDynamicIO = function (onDataRequested, onDataFetched) {
+        var client = this;
+        var dataSourceCallback = function (refs) {
+            onDataRequested(refs);
+            return client.batcher.get(refs);
+        };
+        return clientStuff.generateDynamicApiProxy(this.schema, dataSourceCallback, this.store, onDataFetched);
+    };
 }
 
 var FlyingSquirrel = {

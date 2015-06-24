@@ -32,13 +32,17 @@ var clientStuff = {
                     }
                     newRefs.push(ref);
                 });
+
                 var callbackError, callbackReturnValue;
                 try {
-                    callbackReturnValue = callback(interceptor);
+                    callbackReturnValue = callback(interceptor); // Calling the given function.
                 } catch (e) {
-                    callbackError = e;
+                    callbackError = e; // Error? Most likely we don't care.
                 }
+
                 if (newRefs.length) {
+                    // Ah, the callback needs more data!
+                    // Get new refs and add their data to store.
 
                     var filteredNewRefs = schemaUtils.filterRefs(schema, newRefs);
 
@@ -50,18 +54,18 @@ var clientStuff = {
                         refsWeAlreadyFetched[newRef] = true;
                     });
 
-                    // Ah, the callback needs more data!
                     if (callbackError) {
                         console.log('by the way... ', callbackError, callbackError.stack);
                     }
-                    // we'll fetch the data and try again
+
+                    // We'll fetch the data and try again with the callback.
                     return dataSourceCallback(filteredNewRefs).then(function (newStoreData) {
                         if (_.isString(newStoreData)) {
                             throw newStoreData; // Looks like we got an error message.
                         }
                         console.assert(_.isObject(newStoreData), 'got non-object from data source');
 
-                        // TODO: assert that the new store really contains the data we requested
+                        // TODO: assert that newStoreData really contains the data we requested
 
                         _.merge(store, newStoreData);
                         return iterate();
@@ -69,21 +73,96 @@ var clientStuff = {
                 } else {
                     // No more data requests. We finish.
 
-                    if (callbackError) {
+                    if (callbackError) { // Looks like a bug in the callback.
                         finished = 'rejected';
-                        throw callbackError; // aww... we failed. Looks like a bug in the callback.
+                        // NOTE: Exceptions from the callback are never thrown but the promise is rejected instead.
+                        return Promise.reject(callbackError);
                     } else {
                         finished = 'resolved';
+                        // This means returning synchronously, if it's the 1st iteration.
                         return callbackReturnValue;
                     }
                 }
             }
 
-            // NOTE: the call to iterate is wrapped in a promise so that exceptions are not thrown
-            // but the promise is rejected instead.
-            return Promise.resolve().then(iterate);
+            // NOTE: The result will be returned synchronously, if possible.
+            return iterate();
         };
     },
+
+    generateDynamicApiProxy: function generateDynamicApiProxy(schema, dataSourceCallback, store, onDataFetched) {
+
+        console.assert(_.isObject(schema));
+        console.assert(_.isFunction(dataSourceCallback));
+        console.assert(_.isObject(store));
+        console.assert(_.isFunction(onDataFetched));
+
+        var refsWeAlreadyFetched = {};
+
+        var timeoutHandle;
+        var waitingForData = false;
+
+        var newRefs = [];
+        var interceptor = createInterceptor(schema, store, function (ref) {
+            if (refsWeAlreadyFetched[ref]) {
+                console.warn('FlyingSquirrel internal error: ref ' + newRef +
+                    ' was fetched, but it looks like it isn\'t present in the store');
+                return; // Not fetching it again
+            }
+            // When waitingForData, the refs are ignored. The end users should request it again
+            // (if it is still needed) after they receive that data.
+            // TODO: maybe do some comparing of ref lists and filtering with filterRefs to optimize it.
+            if (!waitingForData) {
+                newRefs.push(ref);
+                if (!timeoutHandle) {
+                    timeoutHandle = setTimeout(handleNewRefs);
+                }
+            }
+        });
+
+        function handleNewRefs() {
+            // Ah, the callback needs more data!
+            // Get new refs and add their data to store.
+
+            timeoutHandle = null;
+
+            var caughtError = null;
+            Promise.resolve().then(function () {
+                var filteredNewRefs = schemaUtils.filterRefs(schema, newRefs);
+
+                _.each(filteredNewRefs, function(newRef) {
+                    refsWeAlreadyFetched[newRef] = true;
+                });
+
+                // We'll fetch the data and try again with the callback.
+                waitingForData = true;
+
+                return dataSourceCallback(filteredNewRefs);
+            }).then(function (newStoreData) {
+                if (_.isString(newStoreData)) {
+                    throw newStoreData; // Looks like we got an error message.
+                }
+                console.assert(_.isObject(newStoreData), 'got non-object from data source');
+
+                // TODO: assert that newStoreData really contains the data we requested
+
+                _.merge(store, newStoreData);
+            }).catch(function (err) {
+                // TODO: don't repeat the request for invalid refs
+
+                caughtError = err;
+                console.error('error in dynamic IO', err);
+
+            }).then(function () {
+                newRefs = [];
+                waitingForData = false;
+
+                onDataFetched(caughtError);
+            });
+        }
+
+        return interceptor;
+    }
 };
 
 module.exports = clientStuff;
