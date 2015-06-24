@@ -58,7 +58,9 @@ And, importantly: re-rendering the child component whenever squirrel reports any
 
 # Writing unit-tests for the React components, or providing usage examples for the style guide
 
-Super-simple. Just use JSON data. This is possible because all the small components
+## Variant 1: manual mocking
+
+Just use JSON data. This is possible because all the small components
 (building blocks) have no idea that Squirrel even exists. Caveat: you can't do it for components
 like `SomeBigPartOfThePage` above.
 
@@ -91,7 +93,7 @@ The mock object would be something like:
 (Btw, maybe the repeated `{getAll: function () { return [` part could be refactored to some
 `mockCollection` util function.)
 
-And... if your component queries collections, you'll have to implement `getAll`, this kinda sucks.
+## Variant 2: Taking advantage of Squirrel's auto-mock
 
 You could also create a `Client` that would use a mocked store + mock from the schema.
 All the data should be delivered synchronously then.
