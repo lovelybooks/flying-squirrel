@@ -97,15 +97,15 @@ var clientStuff = {
         console.assert(_.isObject(store));
         console.assert(_.isFunction(onDataFetched));
 
-        var refsWeAlreadyFetched = {};
+        var refsEverRequested = {};
 
         var timeoutHandle;
         var waitingForData = false;
 
         var newRefs = [];
         var interceptor = createInterceptor(schema, store, function (ref) {
-            if (refsWeAlreadyFetched[ref]) {
-                console.warn('FlyingSquirrel internal error: ref ' + newRef +
+            if (refsEverRequested[ref]) {
+                console.warn('FlyingSquirrel internal error: ref ' + ref +
                     ' was fetched, but it looks like it isn\'t present in the store');
                 return; // Not fetching it again
             }
@@ -114,6 +114,7 @@ var clientStuff = {
             // TODO: maybe do some comparing of ref lists and filtering with filterRefs to optimize it.
             if (!waitingForData) {
                 newRefs.push(ref);
+                refsEverRequested[ref] = true;
                 if (!timeoutHandle) {
                     timeoutHandle = setTimeout(handleNewRefs);
                 }
@@ -129,10 +130,9 @@ var clientStuff = {
             var caughtError = null;
             Promise.resolve().then(function () {
                 var filteredNewRefs = schemaUtils.filterRefs(schema, newRefs);
-
-                _.each(filteredNewRefs, function(newRef) {
-                    refsWeAlreadyFetched[newRef] = true;
-                });
+                if (filteredNewRefs.length === 0) {
+                    throw new Error('oh no, the list of refs is empty!');
+                }
 
                 // We'll fetch the data and try again with the callback.
                 waitingForData = true;
