@@ -161,6 +161,10 @@ function Client (schema, fetchRefsCallback) {
         };
         return clientStuff.generateDynamicApiProxy(this.schema, dataSourceCallback, this.store, onDataFetched);
     };
+
+    this.getDataForMockedIO = function () {
+        return clientStuff.generateDynamicApiProxy(this.schema, _.noop, this.store, _.noop);
+    };
 }
 
 var FlyingSquirrel = {
