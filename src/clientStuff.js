@@ -105,8 +105,8 @@ var clientStuff = {
         var newRefs = [];
         var interceptor = createInterceptor(schema, store, function (ref) {
             if (refsEverRequested[ref]) {
-                console.warn('FlyingSquirrel internal error: ref ' + ref +
-                    ' was fetched, but it looks like it isn\'t present in the store');
+                // console.warn('FlyingSquirrel internal error: ref ' + ref +
+                //     ' was fetched, but it looks like it isn\'t present in the store');
                 return; // Not fetching it again
             }
             // When waitingForData, the refs are ignored. The end users should request it again
