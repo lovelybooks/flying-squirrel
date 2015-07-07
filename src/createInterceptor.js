@@ -108,6 +108,11 @@ function createInterceptor(schema, store, newRefCallback) {
                 },
             });
         });
+        Object.defineProperty(subInterceptor, '_isMocked', {
+            get: function () {
+                return !subStore;
+            },
+        });
         return subInterceptor;
     }
 
