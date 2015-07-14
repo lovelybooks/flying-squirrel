@@ -210,7 +210,7 @@ var schemaUtils = {
                 return 'primitive';
             }
             return 'collection';
-        } else if (schemaObj.__isRef) {
+        } else if (schemaObj && schemaObj.__isRef) {
             return 'reference';
         } else if (_.isObject(schemaObj)) {
             if (schemaObj instanceof Date) {
