@@ -60,7 +60,7 @@ var schemaUtils = {
             switch (schemaUtils.determineType(subSchema)) {
                 case 'collection':
                     addResource(subSchema, path, inCollections);
-                    if (!(subSchema[0] instanceof Ref)) {
+                    if (!(subSchema[0].__isRef)) {
                         // We provide endpoints for objects (but not refs) inside the collection.
                         traverse(
                             subSchema[0],
@@ -210,7 +210,7 @@ var schemaUtils = {
                 return 'primitive';
             }
             return 'collection';
-        } else if (schemaObj instanceof Ref) {
+        } else if (schemaObj.__isRef) {
             return 'reference';
         } else if (_.isObject(schemaObj)) {
             if (schemaObj instanceof Date) {

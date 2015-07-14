@@ -32,4 +32,6 @@ Ref.prototype.set = function(object, value) {
     object[key] = value;
 };
 
+Ref.prototype.__isRef = true;
+
 module.exports = Ref;

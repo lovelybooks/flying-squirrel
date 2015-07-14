@@ -18,7 +18,7 @@ function createInterceptor(schema, store, newRefCallback) {
     console.assert(_.isFunction(newRefCallback));
 
     function createSubInterceptorForReference(subSchema, subStore, path) {
-        console.assert(subSchema instanceof Ref);
+        console.assert(subSchema.__isRef);
         console.assert(!subStore || _.isNumber(subStore) || _.isString(subStore));
         return returnValueForGetter(
             subSchema.get(schema)[0], // UGLY
@@ -52,7 +52,7 @@ function createInterceptor(schema, store, newRefCallback) {
                 if (id == null) {
                     throw new Error(id + ' id requested in ' + path);
                 }
-                var isReference = subSchema[0] instanceof Ref;
+                var isReference = subSchema[0].__isRef;
                 if (isReference) {
                     return returnValueForGetter(
                         subSchema[0],
