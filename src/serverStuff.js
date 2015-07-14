@@ -117,9 +117,10 @@ function fetchRef(schema, ref, getResource, store) {
             // referenced directly. This is where the recursion ends.
             console.assert(subSchemaType === 'object');
             return getResourceForCurrentPath().then(function(results) {
-                console.assert(key.split(',').length === results.length, 'Invalid result count');
+                var splitKey = key.split(',');
+                console.assert(splitKey.length === results.length, 'Invalid result count in '+resourcePath.join('.')+': expected '+splitKey.length+', got '+results.length);
                 _.each(subStores, function(subStore) {
-                    _.each(key.split(','), function (keyPart, i) {
+                    _.each(splitKey, function (keyPart, i) {
                         if (results[i] && results[i].id && results[i].id != keyPart) { // jshint ignore:line
                             // NOTE: this is wrapped in an if, to avoid exception when accessing results[i].id
                             console.assert(false, 'invalid id: expected ' + keyPart + ', got ' + results[i].id);

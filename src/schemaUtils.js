@@ -273,6 +273,7 @@ var schemaUtils = {
     },
 
     filterRefs: function filterRefs(schema, refs) {
+        // TODO: if we want something for more than 90% of the __keys, it's better to use foo.*.bar syntax
         console.assert(_.isArray(refs), 'filterRefs: ref array expected');
         var refsMap = {};
         function refUp(ref) {
