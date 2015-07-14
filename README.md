@@ -2,7 +2,9 @@
 
 ![](logo.png)
 
-Squirrel is a client-server library for fetching relational data. In most common scenario the client would run in browser and request the data in a HTTP request, and the server would get the data from some data source like a database, a search engine, or static files. Squirrel is responsible for managing the data store, i.e. making sure that we don’t fetch the same data many times, and that we fetch the data we need avoiding the common pitfalls, like too many HTTP requests, fetching more data than needed or having lots of inconsistent GET endpoints.
+Squirrel is a data fetching library which is smart enough to figure out which pieces of data should be fetched for your frontend components. Just write your code as if you already have the data fetched, without cluttering your component code with handling async responses or checking if the data wasn't already fetched somewhere else.
+
+More technically, squirrel is a client-server library for fetching relational data. In most common scenario the client would run in browser and request the data in a HTTP request, and the server would get the data from some data source like a database, a search engine, or static files. Squirrel is responsible for managing the data store, i.e. making sure that we don’t fetch the same data many times, and that we fetch the data we need avoiding the common pitfalls, like too many HTTP requests, fetching more data than needed or having lots of inconsistent GET endpoints.
 
 I talked about it on
 [FT 2015](2015.front-trends.com/) conference, you can
@@ -149,6 +151,11 @@ there's no magic there. When you call `IO(function callback(data) {...})`:
 
 The `store` used by client is an ordinary JSON object. You can easily save it to `localStorage`,
 or embed it in your js to speed up the first loading. You can also mock it for unit tests.
+
+
+# Best practices: How to use squirrel with React
+
+// TODO
 
 
 # How you can contribute
