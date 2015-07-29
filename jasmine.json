@@ -1,0 +1,9 @@
+{
+    "spec_dir": "src",
+    "helpers": [
+        "__mocks__/*.js"
+    ],
+    "spec_files": [
+        "__tests__/*.js"
+    ]
+}

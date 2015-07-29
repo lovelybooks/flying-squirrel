@@ -38,12 +38,21 @@ describe('serverStuff', function () {
         beforeEach(function () {
             getResourceSpy = jasmine.createSpy('getResource');
             jasmine.clock().install();
+
+            // TODO: this is a hack to make these tests work.
+            // If we stop using the buggy Jasmine timer, it won't be needed anymore.
+            require('es6-promise').Promise._setScheduler(function (flush) {
+                setTimeout(flush, 0);
+            });
+
             store = {};
             spyOn(console, 'log'); // Disabling console output. TODO: make output configurable
         });
         afterEach(function () {
             jasmine.clock().tick(1);
             jasmine.clock().uninstall();
+
+            require('es6-promise').Promise._setScheduler(null);
         });
 
         it('calls getResource to get data', function () {
@@ -152,7 +161,7 @@ describe('serverStuff', function () {
                 expect(store.entries[12]).toEqual({author: 102});
                 expect(store.entries[14]).toEqual({author: 104});
                 expect(store.entries[16]).toEqual({author: 106});
-                expect(_.keys(store.entries)).toEqual(['__keys', '12', '14', '16']); // Note the objects
+                expect(_.sortBy(_.keys(store.entries))).toEqual(['12', '14', '16', '__keys']); // Note the objects
                 expect(store.entries.__keys).toEqual(jasmine.any(Array));
                 expect(store.entries.__keys).toEqual(['12', '14', '16']);
                 expect(store.users.__keys).not.toBeDefined('because we didn\'t fetch users.*');
@@ -183,7 +192,7 @@ describe('serverStuff', function () {
                 expectResouceRequest('topics.{}.entries', [['123'], {}]);
                 getResourceSpy.calls.reset();
                 respondWith([[]]);
-                jasmine.clock().tick(10);
+                jasmine.clock().tick(1);
                 expect(getResourceSpy).not.toHaveBeenCalled(); // We expect no more requests.
                 expect(store.topics[123].entries).toEqual({__keys: []});
                 expect(_.keys(store.topics).length).toBe(1);
