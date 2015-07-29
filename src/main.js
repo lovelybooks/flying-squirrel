@@ -115,6 +115,20 @@ function Server (schema, resourceHandlers) {
             });
         });
     };
+
+    that.fetchMany = function fetchMany(refs) {
+        var mergedResults = {};
+
+        return Promise.all(
+            _.map(refs, function (ref) {
+                return that.fetch(ref).then(function(result) {
+                    _.merge(mergedResults, result);
+                });
+            })
+        ).then(function () {
+            return mergedResults;
+        });
+    };
 }
 
 
