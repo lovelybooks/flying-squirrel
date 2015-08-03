@@ -177,7 +177,8 @@ function Client (schema, fetchRefsCallback) {
     };
 
     this.getDataForMockedIO = function () {
-        return clientStuff.generateDynamicApiProxy(this.schema, _.noop, this.store, _.noop);
+        var neverResolvedPromise = new Promise(_.noop);
+        return clientStuff.generateDynamicApiProxy(this.schema, _.constant(neverResolvedPromise), this.store, _.noop);
     };
 }
 
