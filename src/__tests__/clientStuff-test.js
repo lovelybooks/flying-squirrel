@@ -122,7 +122,7 @@ describe('clientStuff', function () {
 
         it('should return whatever the callback returned (value from backend)', function (done) {
             dataSourceCallback.and.returnValue(Promise.resolve({topics:{'123':{name: 'LOL'}}}));
-            Promise.resolve(IO(function (data) { // jshint ignore:line
+            Promise.resolve(IO(function (data) {
                 return data.topics.get(123);
             })).then(function (topic) {
                 expect(topic.name).toEqual('LOL');
@@ -134,7 +134,7 @@ describe('clientStuff', function () {
         it('should read data from the store', function (done) {
             var store = {users: {'7': {name: 'James Bond'}}};
             IO = generateApiProxy(schema, dataSourceCallback, store);
-            Promise.resolve(IO(function (data) { // jshint ignore:line
+            Promise.resolve(IO(function (data) {
                 return data.users.get(7).name;
             })).then(function (value) {
                 expect(value).toEqual('James Bond');
@@ -146,7 +146,7 @@ describe('clientStuff', function () {
             var store = {};
             IO = generateApiProxy(schema, dataSourceCallback, store);
             dataSourceCallback.and.returnValue(Promise.resolve({topics:{'123':{name: 'LOL'}}}));
-            IO(function (data) { // jshint ignore:line
+            IO(function (data) {
                 return data.topics.get(123);
             }).then(function () {
                 expect(store.topics[123]).toEqual({name: 'LOL'});
@@ -158,7 +158,7 @@ describe('clientStuff', function () {
             var store = {};
             IO = generateApiProxy(schema, dataSourceCallback, store);
             var stolenData;
-            Promise.resolve(IO(function (data) { // jshint ignore:line
+            Promise.resolve(IO(function (data) {
                 stolenData = data;
                 return 'hello';
             })).then(function () {
@@ -170,10 +170,10 @@ describe('clientStuff', function () {
         });
 
         it('should request the data just once if IO() was called inside the IO() callback', function (done) {
-            pending();
+            pending('This test is not finished, TODO'); // jshint ignore:line
             var store = {};
             IO = generateApiProxy(schema, dataSourceCallback, store);
-            IO(function (data) { // jshint ignore:line
+            IO(function (data) {
                 return {
                     first: data.topics.get(123),
                     second: IO(function (data) {
@@ -196,7 +196,7 @@ describe('clientStuff', function () {
                 });
             });
             var callbackCallCount = 0;
-            IO(function (data) { // jshint ignore:line
+            IO(function (data) {
                 callbackCallCount++;
                 if (callbackCallCount === 1) {
                     return data.topics.get(10);

@@ -4,7 +4,6 @@
 require('es6-promise').polyfill();
 var _ = require('lodash');
 
-var Ref = require('./Ref');
 var determineType = require('./schemaUtils').determineType;
 
 // A constructor for our objects (this name will show up in the debugger)

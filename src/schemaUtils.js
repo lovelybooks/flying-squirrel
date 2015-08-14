@@ -1,7 +1,6 @@
 'use strict';
 
 var _ = require('lodash');
-var Ref = require('./Ref');
 
 
 // Helper function. Source: http://stackoverflow.com/questions/1007981
