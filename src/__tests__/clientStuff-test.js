@@ -92,9 +92,9 @@ describe('clientStuff', function () {
             IO(function (data) {
                 data.topics.get(123);
                 ioCallbackCalls++;
-                throw 'omg';
+                throw new Error('omg');
             }).catch(function (err) {
-                expect(err).toEqual('omg');
+                expect(err.message).toEqual('omg');
                 expect(ioCallbackCalls).toBe(2);
                 expect(dataSourceCallback.calls.count()).toBe(1);
                 done();
@@ -104,9 +104,9 @@ describe('clientStuff', function () {
         it('should fail if the callback throws without accessing data', function (done) {
             spyOn(console, 'log');
             IO(function (data) { // jshint ignore:line
-                throw 'omg';
+                throw new Error('omg');
             }).catch(function (err) {
-                expect(err).toEqual('omg');
+                expect(err.message).toEqual('omg');
                 done();
             });
         });

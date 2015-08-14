@@ -238,6 +238,23 @@ describe('schemaUtils', function () {
                 getTypeDeep(schema, 'topics.bork.bork');
             }).toThrow();
         });
+        it('works for a complex case that was once buggy', function () {
+            var schema  = {
+                topics: [{
+                    lotteryRegistrationEntries: [new Ref('entries')],
+                }],
+                entries: [{
+                    author: new Ref('users'),
+                }],
+                users: [{
+                    winStats: {
+                        lastWonLotteryTitle: null,
+                    },
+                }],
+            };
+            var myLongRef = 'topics.123.lotteryRegistrationEntries.*.author.winStats.lastWonLotteryTitle';
+            expect(getTypeDeep(schema, myLongRef)).toEqual('primitive');
+        });
     });
 
     describe('getRefFromStore', function () {

@@ -232,7 +232,7 @@ var schemaUtils = {
             case 'object':
                 return subSchema[key];
             default:
-                throw 'descendInSchema: Cannot descend to "' + key + '" key in primitive value';
+                throw new Error('descendInSchema: Cannot descend to "' + key + '" key in primitive value');
         }
     },
 
@@ -241,8 +241,8 @@ var schemaUtils = {
         var subSchema = schema;
         _.each(path, function(key) {
             subSchema = schemaUtils.descendInSchema(schema, subSchema, key);
-            if (subSchema == null) {
-                throw 'getTypeDeep: Invalid ref: ' + ref;
+            if (_.isUndefined(subSchema)) {
+                throw new Error('getTypeDeep: Invalid ref: ' + ref);
             }
         });
         return schemaUtils.determineType(subSchema);

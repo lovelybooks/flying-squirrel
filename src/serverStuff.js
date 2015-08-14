@@ -21,10 +21,10 @@ function fetchRef(schema, ref, getResource, store) {
     var subStores = [store];
 
     if (schemaUtils.getTypeDeep(schema, ref) === 'collection') {
-        throw 'This ref is a collection. Did you mean "' + ref + '.*" ?';
+        throw new Error('This ref is a collection. Did you mean "' + ref + '.*" ?');
     }
     if (schemaUtils.getTypeDeep(schema, ref) === 'primitive') {
-        throw 'This ref is a primitive. Did you mean "' + _.dropRight(path).join('.') + '" ?';
+        throw new Error('This ref is a primitive. Did you mean "' + _.dropRight(path).join('.') + '" ?');
     }
 
     function getResourceForCurrentPath() {
