@@ -18,6 +18,7 @@
   },
   "scripts": {
     "test": "jasmine JASMINE_CONFIG_PATH=jasmine.json && jshint src",
-    "watch": "nodemon ./node_modules/.bin/jasmine JASMINE_CONFIG_PATH=jasmine.json"
+    "watch": "nodemon ./node_modules/.bin/jasmine JASMINE_CONFIG_PATH=jasmine.json",
+    "setuphook": "echo '#!/bin/sh\nPATH=$PATH:/usr/local/bin:/usr/local/sbin\nnpm test' > .git/hooks/pre-commit; chmod +x .git/hooks/pre-commit"
   }
 }
