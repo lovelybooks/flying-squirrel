@@ -38,13 +38,13 @@ function fetchRef(schema, ref, getResource, store) {
 
     for (var pathIndex = 0; pathIndex < path.length; pathIndex++) {
         // Going one level down in the schema tree.
-        var key = path[pathIndex];
-        subSchema = schemaUtils.descendInSchema(schema, subSchema, key);
+        var pathPart = path[pathIndex];
+        subSchema = schemaUtils.descendInSchema(schema, subSchema, pathPart);
         prevSubSchemaType = subSchemaType;
         subSchemaType = schemaUtils.determineType(subSchema);
 
         // Handling stars: 'collection.*' resolves to a new ref like 'collection.2,3,5'
-        if (prevSubSchemaType === 'collection' && key === '*') {
+        if (prevSubSchemaType === 'collection' && pathPart === '*') {
             callbackArgs.push({}); // The search criteria.
             return getResourceForCurrentPath().then(function(result) {
                 var referencedIds, newCollectionRef;
@@ -86,18 +86,18 @@ function fetchRef(schema, ref, getResource, store) {
         }
 
         if (prevSubSchemaType === 'collection') {
-            // We fetch stuff for some specific key(s) from the collection - let's continue.
+            // We fetch stuff for some specific pathPart(s) from the collection - let's continue.
             resourcePath.push('{}');
-            callbackArgs.push(key.split(',')); // Oh yes, we can have many keys.
+            callbackArgs.push(pathPart.split(',')); // Oh yes, we can have many keys.
         } else {
-            resourcePath.push(key);
+            resourcePath.push(pathPart);
         }
 
         // Fetching and resolving a single reference (which might be inside a '*')
         if (subSchemaType === 'reference') {
             return getResourceForCurrentPath().then(function(referencedIds) {
                 _.each(subStores, function(subStore, i) {
-                    subStore[key] = referencedIds[i];
+                    subStore[pathPart] = referencedIds[i];
                 });
                 referencedIds = _.compact(_.unique(referencedIds)); // Stripping nulls and dupes.
                 if (referencedIds.length === 0) {
@@ -115,19 +115,46 @@ function fetchRef(schema, ref, getResource, store) {
         if (pathIndex === path.length - 1) {
             // It's the end of our path and it's not a star, not a ref - we fetch object(s)
             // referenced directly. This is where the recursion ends.
+            // So here we know that we have a path without references and it ends with an object.
             console.assert(subSchemaType === 'object');
             return getResourceForCurrentPath().then(function(results) {
-                var splitKey = key.split(',');
-                console.assert(splitKey.length === results.length, 'Invalid result count in '+resourcePath.join('.')+': expected '+splitKey.length+', got '+results.length);
-                _.each(subStores, function(subStore) {
-                    _.each(splitKey, function (keyPart, i) {
-                        if (results[i] && results[i].id && results[i].id != keyPart) { // jshint ignore:line
-                            // NOTE: this is wrapped in an if, to avoid exception when accessing results[i].id
-                            console.assert(false, 'invalid id: expected ' + keyPart + ', got ' + results[i].id);
-                        }
-                        subStore[keyPart] = results[i];
-                    });
+                var keysFromPathPart = pathPart.split(',');
+                var expectedResultCount = subStores.length * keysFromPathPart.length;
+                console.assert(expectedResultCount === results.length,
+                    'Invalid result count in '+resourcePath.join('.')+': expected '+expectedResultCount+', got '+results.length);
+
+                var collectionIdsInPathPart = keysFromPathPart.length > 1;
+                var keysForSubstores;
+                // FIXME: this will break for topics.123,124.entries.11,12,13 - but it's hard to tell what should happen in this case anyway
+
+                console.assert(_.sum(_.map(path, function (pp) { return _.contains(pp, ','); })) <= 1,
+                    'Querying nested collections is not supported yet, sorry');
+
+                if (collectionIdsInPathPart) {
+                    // This happens for refs like topics.123,124
+                    console.assert(subStores.length === 1, 'Assuming non-nested collection');
+                    keysForSubstores = keysFromPathPart;
+                    subStores = _.fill(new Array(keysFromPathPart.length), subStores[0]);
+                } else {
+                    // This happens for refs like topics.123,124.stats
+                    console.assert(keysFromPathPart.length === 1);
+                    keysForSubstores = _.fill(new Array(subStores.length), pathPart);
+                }
+                console.assert(keysForSubstores.length === results.length);
+                console.assert(subStores.length === results.length);
+
+                _.each(_.zip(subStores, results, keysForSubstores), function(stuff) {
+                    var subStore = stuff[0], result = stuff[1], key = stuff[2];
+
+                    // Result can be null, and id is optional, but when it's given it should match the expectation
+                    if (collectionIdsInPathPart && result && result.id && result.id != key) { // jshint ignore:line
+                        // NOTE: this is wrapped in an if, to avoid exception when accessing result.id
+                        console.assert(false, 'invalid id: expected ' + key + ', got ' + result.id);
+                    }
+
+                    subStore[key] = result;
                 });
+
                 return store; // No more recursion
             }); // jshint ignore:line
         }
@@ -135,7 +162,7 @@ function fetchRef(schema, ref, getResource, store) {
         // Updating subStores (if it's not the last element).
         subStores = _.flatten(_.map(subStores, function(subStore) {
             // NOTE: that's where the subStores multiplicate.
-            return _.map(key.split(','), function(keyPart) {
+            return _.map(pathPart.split(','), function(keyPart) {
                 if (!subStore[keyPart]) {
                     subStore[keyPart] = {};
                 }

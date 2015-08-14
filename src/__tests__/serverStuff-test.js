@@ -20,6 +20,9 @@ describe('serverStuff', function () {
                 openingEntry: new Ref('entries'),
                 participants: [new Ref('users')],
                 creator: new Ref('users'),
+                stats: {
+                    likes: 12,
+                },
             }],
             entries: [{
                 id: 123,
@@ -146,7 +149,7 @@ describe('serverStuff', function () {
                 expect(_.sortBy(store.entries.__keys)).toEqual(['12', '14', '16']);
                 expect(store.entries[16].text).toEqual('baz');
             });
-            it('works with \'*\' for stuff inside collections (entries.*.author)', function () {
+            it('works with \'*\' for references inside collections (entries.*.author)', function () {
                 startTestingFetchRef('entries.*.author');
                 expectResouceRequest('entries', [{}]);
                 respondWith([12, 14, 16]);
@@ -166,6 +169,18 @@ describe('serverStuff', function () {
                 expect(store.entries.__keys).toEqual(['12', '14', '16']);
                 expect(store.users.__keys).not.toBeDefined('because we didn\'t fetch users.*');
                 expect(store.users[106].name).toEqual('Batman');
+            });
+            it('works with \'*\' for objects inside collections (topics.*.stats)', function () {
+                startTestingFetchRef('topics.*.stats');
+                expectResouceRequest('topics', [{}]);
+                respondWith([123, 124]);
+                expectResouceRequest('topics.{}.stats', [['123', '124']]);
+                respondWith([
+                    {likes: 10},
+                    {likes: 30},
+                ]);
+                expect(store.topics[123].stats).toEqual({likes: 10});
+                expect(store.topics[124].stats).toEqual({likes: 30});
             });
             it('handles null references nicely (meaning: no referenced object)', function () {
                 startTestingFetchRef('entries.12,14.author');

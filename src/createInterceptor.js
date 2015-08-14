@@ -90,6 +90,8 @@ function createInterceptor(schema, store, newRefCallback) {
         var subInterceptor = new Interceptor();
         _.each(_.keys(subSchema), function (fieldName) {
 
+            // TODO: expose referenced objects in toJSON or sth so that _.isEqual can work.
+
             // Putting primitives directly to object. This way JSON.stringify may work.
             if (_.has(subStore, fieldName) && determineType(subSchema[fieldName]) === 'primitive') {
                 subInterceptor[fieldName] = subStore[fieldName];
