@@ -176,6 +176,15 @@ var MyEntryComponentWithMagicDataFetching = React.createClass({
 });
 ```
 
+# TODO (aka project roadmap)
+
+* Add support for querying collections.
+* Let client invalidate some parts of the store easily
+* Separate the debug utilities from the core code (and make them optional)
+* Refactor the tests to stop using the buggy Jasmine clock
+* Think about an abstraction for handling write operations
+* Nice interactive demo page
+
 
 # How you can contribute
 
@@ -188,10 +197,6 @@ var MyEntryComponentWithMagicDataFetching = React.createClass({
 **If you'd like to help develop squirrel, please refer to [CONTRIBUTING.md](CONTRIBUTING.md)**
 
 
-# Project roadmap
+# License
 
-* Add support for querying collections.
-* Let client invalidate some parts of the store easily
-* Separate the debug utilities from the core code (and make them optional)
-* Refactor the tests to stop using the buggy Jasmine clock
-* Think about an abstraction for handling write operations
+[MIT](LICENSE.md).
