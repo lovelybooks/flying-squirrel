@@ -199,4 +199,4 @@ var MyEntryComponentWithMagicDataFetching = React.createClass({
 
 # License
 
-[MIT](LICENSE.md).
+[MIT](LICENSE.txt).
