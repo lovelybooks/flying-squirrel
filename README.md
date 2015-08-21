@@ -6,9 +6,12 @@ Squirrel is a data fetching library which is smart enough to figure out which pi
 
 More technically, squirrel is a client-server library for fetching relational data. In most common scenario the client would run in browser and request the data in a HTTP request, and the server would get the data from some data source like a database, a search engine, or static files. Squirrel is responsible for managing the data store, i.e. making sure that we don’t fetch the same data many times, and that we fetch the data we need avoiding the common pitfalls, like too many HTTP requests, fetching more data than needed or having lots of inconsistent GET endpoints.
 
+Squirrel was developed in [HGV Publishing Services](http://www.hgv-online.de/) for use on the
+[LovelyBooks](http://www.lovelybooks.de/) platform. We're proud to announce our first open source project :) :octocat:
+
 I talked about it on
 [FT 2015](2015.front-trends.com/) conference, you can
-[watch the talk to get some introduction to the project](https://www.youtube.com/watch?v=uJg6jm5BzPs).
+[watch the talk about how it solves the data fetching problem](https://www.youtube.com/watch?v=uJg6jm5BzPs).
 
 After it's configured, example usage in frontend looks like this:
 
@@ -36,7 +39,7 @@ the first stable version.
 You can install the library with:
 
 ```bash
-npm install --save git+ssh://git@github.com:mik01aj/flying-squirrel.git
+npm install --save git+ssh://git@github.com:lovelybooks/flying-squirrel.git
 ```
 
 Then, in your JS, define your tree structure (schema) with some example data:
@@ -153,9 +156,25 @@ The `store` used by client is an ordinary JSON object. You can easily save it to
 or embed it in your js to speed up the first loading. You can also mock it for unit tests.
 
 
-# Best practices: How to use squirrel with React
+# How to use squirrel with React
 
-// TODO
+See [this gist](https://gist.github.com/mik01aj/b4f3a7ffbd1d6df71eee) for an example simple wrapper.
+
+The point is, that your components shouldn't know they use some magic models from some library. They should just use the data as if it was plain JSON. In the example below, the `Entry` component doesn't need to know anything about squirrel (well, except `get` and `getAll` for collections). This way you can easily make unit tests or demos of your components.
+
+```jsx
+var MyEntryComponentWithMagicDataFetching = React.createClass({
+    propTypes: {
+        entryId: React.PropTypes.number.isRequired,
+    },
+    render: function () {
+        var that = this;
+        return <SquirrelWrapper render={ function (data) {
+            return <Entry entry={ data.entries.get(that.props.entryId) } />;
+        } } />;
+    },
+});
+```
 
 
 # How you can contribute

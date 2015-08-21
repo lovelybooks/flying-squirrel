@@ -2,7 +2,7 @@
   "name": "flying-squirrel",
   "version": "0.0.3",
   "description": "A simple yet powerful library for accessing remote relational data in JS.",
-  "repository": "git+ssh://git@github.com:mik01aj/flying-squirrel.git",
+  "repository": "git+ssh://git@github.com:lovelybooks/flying-squirrel.git",
   "main": "src/main.js",
   "dependencies": {
     "es6-promise": "^2.0.1",
