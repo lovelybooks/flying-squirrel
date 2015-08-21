@@ -31,7 +31,7 @@ or, if the function is synchronuous, the exception should be thrown.
 
 Programmer errors should be never handled. If a programmer error occurs, the program should
 crash with a stack trace. There could be also a message to report the bug in
-[the project's issue tracker](https://github.com/mik01aj/flying-squirrel/issues).
+[the project's issue tracker](https://github.com/lovelybooks/flying-squirrel/issues).
 
 For more details, refer to
 [the Node.js guide to error handling](https://www.joyent.com/developers/node/design/errors).
